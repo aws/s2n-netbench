@@ -14,8 +14,8 @@ futures = "0.3"
 mimalloc = "0.1"
 netbench = { version = "0.1", path = "../netbench" }
 probe = "0.5"
-s2n-quic = { path = "../../quic/s2n-quic", features = ["provider-tls-s2n"] }
-s2n-quic-core = { path = "../../quic/s2n-quic-core", features = ["testing"] }
+s2n-quic = "1.31"
+s2n-quic-core = "0.31"
 s2n-tls = { version = "0.0.39" }
 s2n-tls-tokio = { version = "0.0.39" }
 structopt = "0.3"
