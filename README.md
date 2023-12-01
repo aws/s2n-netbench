@@ -1,4 +1,4 @@
-# netbench
+# s2n-netbench
 
 An efficiency, performance, and correctness analysis tool for transport protocols.
 
@@ -6,7 +6,7 @@ An efficiency, performance, and correctness analysis tool for transport protocol
 
 There are many transport protocols and several implementations of each. This tool exists to provide users with the ability to perform a direct comparison and decide the best implementation for their workloads.
 
-Here are a few examples of questions that netbench aims to answer:
+Here are a few examples of questions that s2n-netbench aims to answer:
 
 * What is the cost of encrypting traffic?
     * How much more capacity will I need when deploying this?
@@ -21,8 +21,8 @@ Here are a few examples of questions that netbench aims to answer:
 * Is implementation "X" interoperable with implementation "Y" of "Z" protocol?
 
 ## Quickstart
-A basic use of netbench is demonstrated in the `netbench-run.sh` script. This script will
-- compile all necessary netbench utilities
+A basic use of s2n-netbench is demonstrated in the `netbench-run.sh` script. This script will
+- compile all necessary s2n-netbench utilities
 - generate scenario files
 - execute the `request-response.json` scenario using `s2n-quic` and `s2n-tls` drivers
 - execute the `connect.json` scenario using `s2n-quic` and `s2n-tls` drivers
