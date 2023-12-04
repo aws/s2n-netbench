@@ -1,4 +1,4 @@
-FROM rust:latest as planner
+FROM public.ecr.aws/docker/library/rust:latest as planner
 WORKDIR app
 RUN cargo install cargo-chef --version 0.1.23
 COPY Cargo.toml /app
