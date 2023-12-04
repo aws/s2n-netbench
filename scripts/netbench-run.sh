@@ -8,7 +8,7 @@
 set -e
 
 ARTIFACT_FOLDER="target/release"
-NETBENCH_ARTIFACT_FOLDER="target/netbench"
+NETBENCH_ARTIFACT_FOLDER="target/s2n-netbench"
 
 # the run_trial function will run the request-response scenario
 # with the driver passed in as the first argument
@@ -24,8 +24,8 @@ run_trial() {
 
     # run the server while collecting metrics.
     echo "  running the server"
-    ./$ARTIFACT_FOLDER/netbench-collector \
-    ./$ARTIFACT_FOLDER/netbench-driver-$DRIVER-server \
+    ./$ARTIFACT_FOLDER/s2n-netbench-collector \
+    ./$ARTIFACT_FOLDER/s2n-netbench-driver-server-$DRIVER \
     --scenario ./$NETBENCH_ARTIFACT_FOLDER/$SCENARIO.json \
     > $NETBENCH_ARTIFACT_FOLDER/results/$SCENARIO/$DRIVER/server.json &
     # store the server process PID. $! is the most recently spawned child pid
@@ -37,8 +37,8 @@ run_trial() {
 
     # run the client. Port 4433 is the default for the server.
     echo "  running the client"
-    SERVER_0=localhost:4433 ./$ARTIFACT_FOLDER/netbench-collector \
-     ./$ARTIFACT_FOLDER/netbench-driver-$DRIVER-client \
+    SERVER_0=localhost:4433 ./$ARTIFACT_FOLDER/s2n-netbench-collector \
+     ./$ARTIFACT_FOLDER/s2n-netbench-driver-client-$DRIVER \
      --scenario ./$NETBENCH_ARTIFACT_FOLDER/$SCENARIO.json \
      > $NETBENCH_ARTIFACT_FOLDER/results/$SCENARIO/$DRIVER/client.json
 
@@ -50,12 +50,12 @@ run_trial() {
 }
 
 # build all tools in the netbench workspace
-cargo build --release
+cargo build --profile=bench
 
 # generate the scenario files. This will generate .json files that can be found
 # in the netbench/target/netbench directory. Config for all scenarios is done
 # through this binary.
-./$ARTIFACT_FOLDER/netbench-scenarios --request_response.response_size=8GiB --connect.connections 42
+./$ARTIFACT_FOLDER/s2n-netbench-scenarios --request_response.response_size=8GiB --connect.connections 42
 
 run_trial request_response s2n-quic
 run_trial request_response s2n-tls
@@ -64,4 +64,4 @@ run_trial connect s2n-quic
 run_trial connect s2n-tls
 
 echo "generating the report"
-./$ARTIFACT_FOLDER/netbench-cli report-tree $NETBENCH_ARTIFACT_FOLDER/results $NETBENCH_ARTIFACT_FOLDER/report
+./$ARTIFACT_FOLDER/s2n-netbench report-tree $NETBENCH_ARTIFACT_FOLDER/results $NETBENCH_ARTIFACT_FOLDER/report

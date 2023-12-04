@@ -13,7 +13,7 @@ pub struct Proc {
 impl Proc {
     pub fn new(pid: u32) -> Self {
         Self {
-            pid: Pid::from(pid as i32),
+            pid: Pid::from(pid as usize),
             system: System::new_with_specifics(
                 RefreshKind::new()
                     .with_cpu(CpuRefreshKind::new().with_cpu_usage())

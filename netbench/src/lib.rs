@@ -6,7 +6,7 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 mod checkpoints;
 pub mod client;
-mod connection;
+pub mod connection;
 mod driver;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
@@ -15,8 +15,6 @@ pub mod duplex;
 pub mod helper;
 pub mod multiplex;
 pub mod operation;
-#[cfg(feature = "s2n-quic")]
-pub mod s2n_quic;
 pub mod scenario;
 pub mod stats;
 pub mod timer;
