@@ -34,6 +34,9 @@ config!({
     /// The rate at which the server receives data
     let server_receive_rate: Option<Rate> = None;
 
+    /// The number of distinct servers to connect to
+    let servers: u64 = 1;
+
     /// The number of bytes that must be received before the next request
     let response_unblock: Byte = 0.bytes();
 });
@@ -49,6 +52,7 @@ pub fn scenario(config: Config) -> Scenario {
         client_receive_rate,
         server_send_rate,
         server_receive_rate,
+        servers,
         response_delay,
         response_unblock,
     } = config;
@@ -68,36 +72,48 @@ pub fn scenario(config: Config) -> Scenario {
 
         conn.open_bidirectional_stream(
             |local| {
-                if let Some(rate) = client_send_rate {
-                    local.set_send_rate(rate);
-                }
-                if let Some(rate) = client_receive_rate {
-                    local.set_receive_rate(rate);
-                }
-                local.send(request_size);
+                local.profile("lbl", |local| {
+                    if let Some(rate) = client_send_rate {
+                        local.set_send_rate(rate);
+                    }
+                    if let Some(rate) = client_receive_rate {
+                        local.set_receive_rate(rate);
+                    }
+                    local.profile("request", |local| {
+                        local.send(request_size);
+                    });
 
-                if *response_unblock > 0 {
-                    local.receive(response_unblock);
-                    local.unpark(unpark);
-                    local.receive(response_size - response_unblock);
-                } else {
-                    local.receive(response_size);
-                }
+                    local.profile("response", |local| {
+                        if *response_unblock > 0 {
+                            local.receive(response_unblock);
+                            local.unpark(unpark);
+                            local.receive(response_size - response_unblock);
+                        } else {
+                            local.receive(response_size);
+                        }
+                    });
+                });
             },
             |remote| {
-                if let Some(rate) = server_send_rate {
-                    remote.set_send_rate(rate);
-                }
-                if let Some(rate) = server_receive_rate {
-                    remote.set_receive_rate(rate);
-                }
-                remote.receive(request_size);
+                remote.profile("lbl", |remote| {
+                    if let Some(rate) = server_send_rate {
+                        remote.set_send_rate(rate);
+                    }
+                    if let Some(rate) = server_receive_rate {
+                        remote.set_receive_rate(rate);
+                    }
+                    remote.profile("request", |remote| {
+                        remote.receive(request_size);
+                    });
 
-                if response_delay != Duration::ZERO {
-                    remote.sleep(response_delay);
-                }
+                    if response_delay != Duration::ZERO {
+                        remote.sleep(response_delay);
+                    }
 
-                remote.send(response_size);
+                    remote.profile("response", |remote| {
+                        remote.send(response_size);
+                    });
+                });
             },
         );
 
@@ -107,27 +123,35 @@ pub fn scenario(config: Config) -> Scenario {
     };
 
     Scenario::build(|scenario| {
-        let server = scenario.create_server();
+        let servers = (0..servers)
+            .map(|_| scenario.create_server())
+            .collect::<Vec<_>>();
 
         scenario.create_client(|client| {
-            for _ in 0..connections {
-                client.connect_to(&server, |conn| {
-                    if parallel {
-                        conn.scope(|scope| {
-                            let mut prev_checkpoint = None;
-                            for _ in 0..count {
-                                scope.spawn(|conn| {
-                                    request(conn, &mut prev_checkpoint);
-                                });
-                            }
-                        });
-                    } else {
-                        for _ in 0..count {
-                            request(conn, &mut None);
+            client.scope(|client| {
+                for server in &servers {
+                    client.spawn(|client| {
+                        for _ in 0..connections {
+                            client.connect_to(server, |conn| {
+                                if parallel {
+                                    conn.scope(|scope| {
+                                        let mut prev_checkpoint = None;
+                                        for _ in 0..count {
+                                            scope.spawn(|conn| {
+                                                request(conn, &mut prev_checkpoint);
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    for _ in 0..count {
+                                        request(conn, &mut None);
+                                    }
+                                }
+                            });
                         }
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
     })
 }
