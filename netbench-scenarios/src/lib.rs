@@ -21,7 +21,7 @@ pub fn main<C: Configs>() -> Result<()> {
         .arg(
             Arg::with_name("out_dir")
                 .value_name("OUT_DIR")
-                .default_value("target/netbench")
+                .default_value("target/s2n-netbench")
                 .takes_value(true),
         );
 

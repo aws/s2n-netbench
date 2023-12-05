@@ -1,0 +1,23 @@
+[package]
+name = "s2n-netbench-driver-s2n-tls"
+version = "0.1.0"
+authors = ["AWS s2n"]
+edition = "2021"
+rust-version = "1.74"
+license = "Apache-2.0"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
+netbench-driver = { version = "0.1", path = "../netbench-driver", package = "s2n-netbench-driver" }
+s2n-tls = { version = "=0.0.39" }
+s2n-tls-tokio = { version = "=0.0.39" }
+tokio = { version = "1", features = ["io-util", "net", "time", "rt-multi-thread"] }
+
+[[bin]]
+name = "s2n-netbench-driver-client-s2n-tls"
+path = "src/bin/client.rs"
+
+[[bin]]
+name = "s2n-netbench-driver-server-s2n-tls"
+path = "src/bin/server.rs"

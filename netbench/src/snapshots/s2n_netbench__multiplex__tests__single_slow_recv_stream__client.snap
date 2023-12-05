@@ -1,0 +1,8 @@
+---
+source: netbench/src/multiplex.rs
+expression: client_trace.as_str().unwrap()
+---
+0:00:00.000001 [0] open[0]
+0:00:00.000001 [0] send[0]=1000
+0:00:00.000001 [0] sfin[0]
+

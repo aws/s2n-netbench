@@ -1,0 +1,25 @@
+[package]
+name = "s2n-netbench-driver-s2n-quic"
+version = "0.1.0"
+authors = ["AWS s2n"]
+edition = "2021"
+rust-version = "1.74"
+license = "Apache-2.0"
+
+[dependencies]
+bytes = "1"
+clap = { version = "4", features = ["derive"] }
+futures = "0.3"
+netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
+netbench-driver = { version = "0.1", path = "../netbench-driver", package = "s2n-netbench-driver" }
+s2n-quic = "1"
+s2n-quic-core = { version = "*", features = ["testing"] }
+tokio = { version = "1", features = ["io-util", "net", "time", "rt-multi-thread"] }
+
+[[bin]]
+name = "s2n-netbench-driver-client-s2n-quic"
+path = "src/bin/client.rs"
+
+[[bin]]
+name = "s2n-netbench-driver-server-s2n-quic"
+path = "src/bin/server.rs"

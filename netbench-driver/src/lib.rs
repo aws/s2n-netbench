@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+use clap::Parser;
 use netbench::{
     client::{self, AddressMap},
     multiplex, scenario, trace,
@@ -8,52 +9,57 @@ use netbench::{
     Error, Result,
 };
 use std::{net::IpAddr, ops::Deref, path::Path, str::FromStr, sync::Arc, time::Duration};
-use structopt::StructOpt;
 
 mod alloc;
 pub use alloc::Allocator;
 
-const TRACE_VALUES: &[&str] = &["disabled", "throughput", "stdio"];
+#[derive(Clone, Copy, Debug, Default, clap::ValueEnum)]
+pub enum Trace {
+    Disabled,
+    #[default]
+    Throughput,
+    Stdio,
+}
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Server {
-    #[structopt(short, long, default_value = "::")]
+    #[arg(short, long, default_value = "::")]
     pub ip: IpAddr,
 
-    #[structopt(short, long, default_value = "4433", env = "PORT")]
+    #[arg(short, long, default_value = "4433", env = "PORT")]
     pub port: u16,
 
-    #[structopt(long, default_value = "netbench")]
+    #[arg(long, default_value = "netbench")]
     pub application_protocols: Vec<String>,
 
-    #[structopt(long, default_value = "0", env = "SERVER_ID")]
+    #[arg(long, default_value = "0", env = "SERVER_ID")]
     pub server_id: usize,
 
-    #[structopt(long, default_value = "throughput", possible_values = TRACE_VALUES, env = "TRACE")]
-    pub trace: Vec<String>,
+    #[arg(long, default_value = "throughput", env = "TRACE")]
+    pub trace: Vec<Trace>,
 
-    #[structopt(long, short = "V")]
+    #[arg(long, short = 'V')]
     pub verbose: bool,
 
-    #[structopt(long, default_value = "8KiB")]
+    #[arg(long, default_value = "8KiB")]
     pub rx_buffer: Byte,
 
-    #[structopt(long, default_value = "8KiB")]
+    #[arg(long, default_value = "8KiB")]
     pub tx_buffer: Byte,
 
-    #[structopt(env = "SCENARIO")]
+    #[arg(env = "SCENARIO")]
     pub scenario: Scenario,
 
-    #[structopt(long)]
+    #[arg(long)]
     pub nagle: bool,
 
-    #[structopt(long, env = "MULTITHREADED")]
+    #[arg(long, env = "MULTITHREADED")]
     pub multithreaded: Option<Option<bool>>,
 
     /// Forces multiplex mode for the driver
     ///
     /// Without this, the requirement is inferred based on the scenario
-    #[structopt(long, env = "MULTIPLEX")]
+    #[arg(long, env = "MULTIPLEX")]
     multiplex: Option<Option<bool>>,
 }
 
@@ -102,42 +108,42 @@ impl Server {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Client {
-    #[structopt(long, default_value = "netbench")]
+    #[arg(long, default_value = "netbench")]
     pub application_protocols: Vec<String>,
 
-    #[structopt(short, long, default_value = "::", env = "LOCAL_IP")]
+    #[arg(short, long, default_value = "::", env = "LOCAL_IP")]
     pub local_ip: IpAddr,
 
-    #[structopt(long, default_value = "0", env = "CLIENT_ID")]
+    #[arg(long, default_value = "0", env = "CLIENT_ID")]
     pub client_id: usize,
 
-    #[structopt(long, default_value = "throughput", possible_values = TRACE_VALUES, env = "TRACE")]
-    pub trace: Vec<String>,
+    #[arg(long, default_value = "throughput", env = "TRACE")]
+    pub trace: Vec<Trace>,
 
-    #[structopt(long, short = "V")]
+    #[arg(long, short = 'V')]
     pub verbose: bool,
 
-    #[structopt(long, default_value = "8KiB")]
+    #[arg(long, default_value = "8KiB")]
     pub rx_buffer: Byte,
 
-    #[structopt(long, default_value = "8KiB")]
+    #[arg(long, default_value = "8KiB")]
     pub tx_buffer: Byte,
 
-    #[structopt(env = "SCENARIO")]
+    #[arg(env = "SCENARIO")]
     pub scenario: Scenario,
 
-    #[structopt(long)]
+    #[arg(long)]
     pub nagle: bool,
 
-    #[structopt(long, env = "MULTITHREADED")]
+    #[arg(long, env = "MULTITHREADED")]
     pub multithreaded: Option<Option<bool>>,
 
     /// Forces multiplex mode for the driver
     ///
     /// Without this, the requirement is inferred based on the scenario
-    #[structopt(long, env = "MULTIPLEX")]
+    #[arg(long, env = "MULTIPLEX")]
     multiplex: Option<Option<bool>>,
 }
 
@@ -241,10 +247,10 @@ impl Deref for Scenario {
     }
 }
 
-fn traces(trace: &[String], verbose: bool, traces: &Arc<Vec<String>>) -> impl trace::Trace + Clone {
-    let enabled = !trace.iter().any(|v| v == "disabled");
+fn traces(trace: &[Trace], verbose: bool, traces: &Arc<Vec<String>>) -> impl trace::Trace + Clone {
+    let enabled = !trace.iter().any(|v| matches!(v, Trace::Disabled));
 
-    let throughput = if enabled && trace.iter().any(|v| v == "throughput") {
+    let throughput = if enabled && trace.iter().any(|v| matches!(v, Trace::Throughput)) {
         let trace = trace::Throughput::default();
         trace.reporter(Duration::from_secs(1));
         Some(trace)
@@ -252,7 +258,7 @@ fn traces(trace: &[String], verbose: bool, traces: &Arc<Vec<String>>) -> impl tr
         None
     };
 
-    let stdio = if enabled && trace.iter().any(|v| v == "stdio") {
+    let stdio = if enabled && trace.iter().any(|v| matches!(v, Trace::Stdio)) {
         let mut trace = trace::StdioLogger::new(traces.clone());
         trace.verbose(verbose);
         Some(trace)

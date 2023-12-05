@@ -1,0 +1,15 @@
+[default]
+binary = false
+check-filename = true
+
+[default.extend-identifiers]
+
+[default.extend-words]
+
+[files]
+extend-exclude = [
+    "*.snap",
+    "*.bin",
+    "*.der",
+    "*.pem",
+]
