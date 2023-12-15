@@ -12,5 +12,4 @@ clap = { version = "4", features = ["derive", "env"] }
 mimalloc = { version = "0.1", default-features = false }
 netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
 probe = "0.5"
-s2n-quic-core = { version = "0.31", features = ["testing"] }
 tokio = { version = "1", features = ["io-util", "net", "time", "rt-multi-thread"] }
