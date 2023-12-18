@@ -25,7 +25,7 @@ s2n-quic-core = { version = "*", features = ["testing"] }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 sha2 = "0.10"
-tokio = { version = "1", features = ["net", "time"] }
+tokio = { version = "1", features = ["net", "rt", "time"] }
 
 [dev-dependencies]
 futures-test = "0.3"
