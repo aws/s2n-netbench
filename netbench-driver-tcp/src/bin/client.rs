@@ -13,9 +13,10 @@ use tokio::{
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator::new();
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
-    Client::parse().run().await
+fn main() -> Result<()> {
+    let args = Client::parse();
+    let runtime = args.opts.runtime();
+    runtime.block_on(args.run())
 }
 
 #[derive(Debug, Parser)]
