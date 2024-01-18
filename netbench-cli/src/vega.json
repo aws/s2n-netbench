@@ -16,7 +16,7 @@
     },
     "legend": {
       "labelBaseline": "middle",
-      "labelFontSize": 9,
+      "labelFontSize": 11,
       "symbolSize": 50,
       "symbolType": "square",
       "orient": "bottom"
