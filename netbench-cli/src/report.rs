@@ -59,6 +59,7 @@ impl Report {
                 .last()
                 .unwrap()
                 .trim_start_matches("netbench-driver-")
+                .trim_start_matches("s2n-netbench-driver-")
                 .to_string();
 
             let scenario_name = scenario

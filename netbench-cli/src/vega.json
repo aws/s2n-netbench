@@ -18,7 +18,8 @@
       "labelBaseline": "middle",
       "labelFontSize": 11,
       "symbolSize": 50,
-      "symbolType": "square"
+      "symbolType": "square",
+      "orient": "bottom"
     }
   },
 
