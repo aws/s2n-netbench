@@ -72,6 +72,8 @@ pub enum IterateValue {
     Count { amount: u64 },
 }
 
+// builder helpers
+#[cfg(feature = "builder")]
 impl IterateValue {
     pub(crate) fn is_zero(&self) -> bool {
         match self {
