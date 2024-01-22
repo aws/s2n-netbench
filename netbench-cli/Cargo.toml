@@ -1,6 +1,6 @@
 [package]
 name = "s2n-netbench-cli"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["AWS s2n"]
 description = "Internal crate used by s2n-netbench"
 repository = "https://github.com/aws/s2n-netbench"

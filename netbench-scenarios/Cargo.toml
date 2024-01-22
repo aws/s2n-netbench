@@ -1,6 +1,6 @@
 [package]
 name = "s2n-netbench-scenarios"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["AWS s2n"]
 description = "Internal crate used by s2n-netbench"
 repository = "https://github.com/aws/s2n-netbench"
@@ -11,4 +11,4 @@ license = "Apache-2.0"
 [dependencies]
 clap = { version = "2", features = ["color", "suggestions"] }
 humantime = "2"
-netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench", features = ["builder"] }
+netbench = { version = "0.1.1", path = "../netbench", package = "s2n-netbench", features = ["builder"] }

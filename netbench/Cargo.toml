@@ -1,7 +1,6 @@
 [package]
 name = "s2n-netbench"
-# this in an unpublished internal crate so the version should not be changed
-version = "0.1.0"
+version = "0.1.1"
 description = "An efficiency, performance, and correctness analysis tool for transport protocols."
 repository = "https://github.com/aws/s2n-netbench"
 authors = ["AWS s2n"]
