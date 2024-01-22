@@ -5,9 +5,11 @@ use crate::{operation as op, Result};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::Path, sync::Arc};
 
+#[cfg(feature = "builder")]
 pub mod builder;
 mod id;
 
+#[cfg(feature = "builder")]
 pub use builder::Builder;
 pub use id::Id;
 
@@ -25,6 +27,7 @@ pub struct Scenario {
 }
 
 impl Scenario {
+    #[cfg(feature = "builder")]
     pub fn build<F: FnOnce(&mut builder::Builder)>(f: F) -> Self {
         let mut builder = builder::Builder::new();
         f(&mut builder);

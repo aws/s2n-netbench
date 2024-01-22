@@ -11,4 +11,4 @@ license = "Apache-2.0"
 [dependencies]
 clap = { version = "2", features = ["color", "suggestions"] }
 humantime = "2"
-netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
+netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench", features = ["builder"] }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct Id(String);
 
 impl Id {
-    pub(crate) fn hasher() -> Hasher {
+    pub fn hasher() -> Hasher {
         Hasher::default()
     }
 }
