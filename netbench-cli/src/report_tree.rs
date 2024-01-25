@@ -33,31 +33,49 @@ impl ReportTree {
                 continue;
             };
 
+            // scenario.path() = sample/results/requst_response_incast
             for driver in scenario.path().read_dir()? {
-                let driver = driver?.path();
+                let driver_path = driver?.path();
 
                 macro_rules! push_scenario {
-                    ($target:ident, $name:literal) => {{
-                        let endpoint = driver.join(concat!($name, ".json"));
-                        if endpoint.exists() {
-                            $target
-                                .entry(scenario_name.to_string())
-                                .or_insert_with(|| Report {
-                                    output: Some(
-                                        self.out_dir
-                                            .join(scenario_name)
-                                            .join(concat!($name, "s.json")),
-                                    ),
-                                    ..Default::default()
-                                })
-                                .inputs
-                                .push(endpoint);
-                        }
+                    ($target:ident, $json_result_path:ident, $url_name:literal) => {{
+                        $target
+                            .entry(scenario_name.to_string())
+                            .or_insert_with(|| Report {
+                                output: Some(self.out_dir.join(scenario_name).join($url_name)),
+                                ..Default::default()
+                            })
+                            .inputs
+                            .push($json_result_path);
                     }};
                 }
 
-                push_scenario!(client_scenarios, "client");
-                push_scenario!(server_scenarios, "server");
+                // driver_path = sample/results/requst_response_incast/server-tcp
+                for json_result in driver_path.read_dir()? {
+                    let json_result_path = json_result?.path();
+
+                    let json_result_filename = json_result_path
+                        .file_name()
+                        .expect("expected file path")
+                        .to_str()
+                        .unwrap();
+
+                    // only process .json log files
+                    if !json_result_filename.ends_with(".json") {
+                        continue;
+                    }
+
+                    if json_result_filename.contains("server") {
+                        push_scenario!(server_scenarios, json_result_path, "servers.json");
+                    } else if json_result_filename.contains("client") {
+                        push_scenario!(client_scenarios, json_result_path, "clients.json");
+                    } else {
+                        panic!(
+                            "result filename: {}, should contain either 'client' or 'server'",
+                            json_result_filename
+                        )
+                    }
+                }
             }
         }
 
