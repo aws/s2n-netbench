@@ -1,15 +1,16 @@
 [default]
 binary = false
 check-filename = true
-
 [default.extend-identifiers]
 
 [default.extend-words]
 
 [files]
 extend-exclude = [
+    "request_response.json",
     "*.snap",
     "*.bin",
     "*.der",
+    "*.ico",
     "*.pem",
 ]

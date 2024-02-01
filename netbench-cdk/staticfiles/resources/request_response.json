@@ -1,0 +1,101 @@
+{
+    "id": "Sxo8NSFbE6Z9NgrrcJshRPXBHA-kaRcEykLTTMtanRk",
+    "clients": [
+        {
+            "scenario": [
+                {
+                    "connect": {
+                        "server_id": 0,
+                        "server_connection_id": 0,
+                        "client_connection_id": 0
+                    }
+                }
+            ],
+            "connections": [
+                {
+                    "ops": [
+                        {
+                            "open_bidirectional_stream": {
+                                "stream_id": 0
+                            }
+                        },
+                        {
+                            "send": {
+                                "stream_id": 0,
+                                "bytes": 1000
+                            }
+                        },
+                        {
+                            "receive": {
+                                "stream_id": 0,
+                                "bytes": 8589934592
+                            }
+                        },
+                        {
+                            "send_finish": {
+                                "stream_id": 0
+                            }
+                        },
+                        {
+                            "receive_finish": {
+                                "stream_id": 0
+                            }
+                        }
+                    ]
+                }
+            ],
+            "certificate_authorities": [
+                0
+            ]
+        }
+    ],
+    "servers": [
+        {
+            "connections": [
+                {
+                    "peer_streams": [
+                        [
+                            {
+                                "receive": {
+                                    "stream_id": 0,
+                                    "bytes": 1000
+                                }
+                            },
+                            {
+                                "send": {
+                                    "stream_id": 0,
+                                    "bytes": 8589934592
+                                }
+                            },
+                            {
+                                "send_finish": {
+                                    "stream_id": 0
+                                }
+                            },
+                            {
+                                "receive_finish": {
+                                    "stream_id": 0
+                                }
+                            }
+                        ]
+                    ]
+                }
+            ],
+            "private_key": 1,
+            "certificate": 2,
+            "certificate_authority": 0
+        }
+    ],
+    "certificates": [
+        {
+            "pem": "-----BEGIN CERTIFICATE-----\r\nMIIBwDCCAWegAwIBAgIJAOZUqmXdbVUlMAoGCCqGSM49BAMCMCUxCzAJBgNVBAYM\r\nAlVTMRYwFAYDVQQDDA1uZXRiZW5jaCBDQSAwMCAXDTc1MDEwMTAwMDAwMFoYDzQw\r\nOTYwMTAxMDAwMDAwWjAlMQswCQYDVQQGDAJVUzEWMBQGA1UEAwwNbmV0YmVuY2gg\r\nQ0EgMDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCbihGz4oBhpThNvtN/CG7Yf\r\n/RjFZ7J/bD7yRHbjtXvkoZ89Gc4YCvh3IT1Q7OerFqJ75RARORQh3QBs0yJ8Kn2j\r\nfjB8MDoGA1UdEQQzMDGCL1N4bzhOU0ZiRTZaOU5ncnJjSnNoUlBYQkhBLWthUmNF\r\neWtMVFRNdGFuUmsubmV0MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUJVVt3WWq\r\nVOa2c+guUCCVbfhEvbcwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNHADBE\r\nAiBxHDyyMvLzKFyp2e2w0GjD+x5zNawKxs633smEVdZr9wIgb9AP19OQt3WUy/ex\r\nkitSh/OcDKAk8QCQOdXv+ZKoSBg=\r\n-----END CERTIFICATE-----\r\n"
+        },
+        {
+            "pem": "-----BEGIN PRIVATE KEY-----\r\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoa2vSvuBN0Y6GpBD\r\nlJNa54JmiLrN3ipOeNlQa3N9ZeKhRANCAAT9OqLe+50B5VJEgfMnaWSAG+oU7B2n\r\nFNcV3pMjNHIMN0qlR9LBtxTv0BQO9JNl6oHGykhlDPDa7Kk0VwE0ewH/\r\n-----END PRIVATE KEY-----\r\n",
+            "pkcs12": "MIIECgIBAzCCA9AGCSqGSIb3DQEHAaCCA8EEggO9MIIDuTCCAq8GCSqGSIb3DQEHBqCCAqAwggKcAgEAMIIClQYJKoZIhvcNAQcBMBwGCiqGSIb3DQEMAQYwDgQIHH7vXYgObfECAggAgIICaDOadUkXKQiAVW9OMFG3cQj6/Rg4kBmDG3P+ceOUEbDBue7fjuBWmMDW4b7EtL8a3Tm0CBinlrqjhIaJUpcRVv17i1YEcEDMrhB3ictRrjI4Ti0lyZwmQC6YGu0t4DDBgWGR2LAEle4TajY52c8P+VywexJm/35549uHvU2rjLYBi0s5Rk4+glejvWQ0073/za1sD5FOFvj/juEH79jRss1FlnOfZmYwESMeAZ4enap+CmVxfWogOoU9BAGU7F2+XG+ZCjcx7bhyD14VQk/FHVsbWm2lqD+Cv6JLygah/c1Zwv7lDcn+Me+cVnbKkOcEaNDyWs93M4GyQlJXsAOe6CAiv2tqSbUeR0HT9EcyojA9m4MeX09/Y53FuhruWOojTBA5KDcIgzXnUC2dFQcGJHr/zfbkTJZsOrNIWMfn0v1R8CG9Z4SYRHxeUYibetJXScXI1ItvUMYc2H+KCIzI5HdbLlm1KF5QzSZQoXZ2pNwK76gwkHaSbS7zeDx870XIbqZ1GgRzIL3ey0vg8RsiWJ3NoB+y/UE/EX4MJHVpFWQ0iZe+mkXeDzJiuJiSsXSI46bU02DmdRDtRUxWQIGy26ShF79DGVVMy341anruUhQ5UtqxQNnIUcDOVDmZaBzB0D5GucPcIpdskKIvZ2Q8Y/zeb4jNJR57ujBohaYA/iXmX0RfbvM2W2Dvlt6J3yy/WR6LHmjtvtZhfNAIDYQZ01WoCGRfe48tsPnWHOUv4dr8I7LaJkK9Ir3LaHtpMmUxcafe8ccp+tO9eg/BDQ8EPdLjaE+7FU4RPwVJ2P1L/9xMxC5T5WwY97IwggECBgkqhkiG9w0BBwGggfQEgfEwge4wgesGCyqGSIb3DQEMCgECoIG0MIGxMBwGCiqGSIb3DQEMAQMwDgQIh7JUmJVakBACAggABIGQVXq/jNEdDpIc/hqIn+iCr+K1VUR9R53JH6Gdtph833McIuaVwsIu+T0CPh4qfA4pLT6Ua3uBpaiOfPCPp8uCEzL3O2kTRkqDiYGq9DDdJFkWdocQiMvnnlBH7rULyOaMkGodb1N6qRwKsome9/HqKaWcjgTxpyCK/4CYawS1zjnHiamSaz9adeU7E2bj7eG4MSUwIwYJKoZIhvcNAQkVMRYEFJ6O87qcb8cWjwGq//kScA91J0ONMDEwITAJBgUrDgMCGgUABBQ5pXsAvq1YiNlot1O3iPKgmrQdXQQIOWPQ2knFCjMCAggA"
+        },
+        {
+            "pem": "-----BEGIN CERTIFICATE-----\r\nMIICBzCCAa2gAwIBAgIINl7+28Y1YEswCgYIKoZIzj0EAwIwJTELMAkGA1UEBgwC\r\nVVMxFjAUBgNVBAMMDW5ldGJlbmNoIENBIDAwIBcNNzUwMTAxMDAwMDAwWhgPNDA5\r\nNjAxMDEwMDAwMDBaMCcxCzAJBgNVBAYMAlVTMRgwFgYDVQQDDA9uZXRiZW5jaCBM\r\nZWFmIDEwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT9OqLe+50B5VJEgfMnaWSA\r\nG+oU7B2nFNcV3pMjNHIMN0qlR9LBtxTv0BQO9JNl6oHGykhlDPDa7Kk0VwE0ewH/\r\no4HCMIG/MB8GA1UdIwQYMBaAFCVVbd1lqlTmtnPoLlAglW34RL23MG0GA1UdEQRm\r\nMGSCL1N4bzhOU0ZiRTZaOU5ncnJjSnNoUlBYQkhBLWthUmNFeWtMVFRNdGFuUmsu\r\nbmV0gjEqLlN4bzhOU0ZiRTZaOU5ncnJjSnNoUlBYQkhBLWthUmNFeWtMVFRNdGFu\r\nUmsubmV0MA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\r\nBQUHAwIwCgYIKoZIzj0EAwIDSAAwRQIhAPc+JcdQVjuWe1uY0mLiBSGKc3bOrI49\r\nkCRKzCdEMUeZAiAHRLWHp5WZecS6OAk5dio3stZcQe5oEvtXvA6GsSSZkQ==\r\n-----END CERTIFICATE-----\r\n"
+        }
+    ]
+}
