@@ -1,9 +1,0 @@
-{
-    "resources": {
-        "NetbenchRunnerLogGroup": "NetbenchInfraDougCh-netbenchrunnerlogsD4E9BAC9-XZ0GSdc9L6By",
-        "NetbenchRunnerS3Bucket": "netbenchrunnerlogs-dougch",
-        "NetbenchCloudfrontDistribution": "https://dopzs76pyl1vp.cloudfront.net",
-        "NetbenchRunnerInstanceProfile": "NetbenchInfraDougCh-NetbenchRunnerInstanceProfileA966252C-czmSw1Ecv8gr",
-        "NetbenchRunnerVPCSubnetTag": {"key": "aws-cdk:subnet-name", "value":"public-subnet-for-runners"}
-    }
-}

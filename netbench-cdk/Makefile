@@ -1,32 +1,24 @@
 SHELL = /usr/bin/bash
-.PHONY: build deploy test
-
-build:
-	cdk synth
+.PHONY: build deploy
 
 bootstrap:
-ifdef AWS_DEFAULT_REGION
+ifdef DEV_ACCOUNT_ID
 	cdk bootstrap aws://$$DEV_ACCOUNT_ID/$$AWS_DEFAULT_REGION
+else
+	$(error DEV_ACCOUNT_ID not set)
 endif
 
-diff: build bootstrap
+build: bootstrap
+	cdk synth
+
+diff: build
 ifdef DEV_ACCOUNT_ID
 	cdk diff NetbenchInfraDev-$(USER)
 endif
 
-diff-prod: build bootstrap
-ifndef DEV_ACCOUNT_ID
-	cdk diff
-endif
-
-deploy: build bootstrap
+deploy: build
 ifdef DEV_ACCOUNT_ID
 	cdk deploy NetbenchInfraDev-$(USER) --require-approval never
-endif
-
-deploy-prod: build
-ifndef DEV_ACCOUNT_ID
-	cdk deploy --all --require-approval never
 endif
 
 state-backup:

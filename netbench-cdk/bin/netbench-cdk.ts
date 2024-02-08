@@ -7,13 +7,7 @@ import { ProdStackPrimaryProps, ProdStackSecondaryProps } from '../lib/config';
 const AWS_DEFAULT_REGION = process.env["AWS_DEFAULT_REGION"] || "us-west-2";
 const app = new App();
 
-if (!process.env["DEV_ACCOUNT_ID"]) {
-  // Production stack only exists if DEV_ACCOUNT_ID is NOT set.
-  new NetbenchInfra(app, 'NetbenchInfraPrimaryProd', ProdStackPrimaryProps);
-  /* TODO: Second Region
-  new NetbenchInfra(app, 'NetbenchInfraSecondaryProd', ProdStackSecondaryProps);
-  */
-} else {
+if (process.env["DEV_ACCOUNT_ID"]) {
   // Development stack only exists if DEV_ACCOUNT_ID is set.
   let user = process.env["USER"];
   if (user == null) {
@@ -27,4 +21,10 @@ if (!process.env["DEV_ACCOUNT_ID"]) {
     bucketSuffix: `${user}`,
     reportStack: true
   });
+} else {
+  // Production stack only exists if DEV_ACCOUNT_ID is NOT set.
+  new NetbenchInfra(app, 'NetbenchInfraPrimaryProd', ProdStackPrimaryProps);
+  /* TODO: Second Region
+  new NetbenchInfra(app, 'NetbenchInfraSecondaryProd', ProdStackSecondaryProps);
+  */
 }
