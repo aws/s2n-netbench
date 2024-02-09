@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import { App } from 'aws-cdk-lib';
-import { NetbenchInfra } from "../lib/netbench"
-import { ProdStackPrimaryProps, ProdStackSecondaryProps } from '../lib/config';
+import { NetbenchInfra } from "./lib/netbench"
+import { ProdStackPrimaryProps, ProdStackSecondaryProps } from './lib/config';
 
 const AWS_DEFAULT_REGION = process.env["AWS_DEFAULT_REGION"] || "us-west-2";
 const app = new App();
