@@ -2,6 +2,7 @@ artifacts/
 build/
 corpus/
 crashes/
+dist/
 target/
 **/*.rs.bk
 Cargo.lock
