@@ -16,18 +16,18 @@ use tokio_native_tls::native_tls::{Identity, TlsAcceptor};
 static ALLOCATOR: Allocator = Allocator::new();
 
 fn main() -> Result<()> {
-    let args = Server::parse();
+    let args = NetbenchServer::parse();
     let runtime = args.opts.runtime();
     runtime.block_on(args.run())
 }
 
 #[derive(Debug, Parser)]
-pub struct Server {
+pub struct NetbenchServer {
     #[command(flatten)]
     opts: netbench_driver::Server,
 }
 
-impl Server {
+impl NetbenchServer {
     pub async fn run(&self) -> Result<()> {
         let scenario = self.opts.scenario();
         let buffer = (*self.opts.rx_buffer as usize, *self.opts.tx_buffer as usize);
