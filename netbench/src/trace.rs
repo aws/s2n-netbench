@@ -340,6 +340,7 @@ pub struct Logger<O: Output> {
 
 pub type MemoryLogger = Logger<std::io::Cursor<Vec<u8>>>;
 pub type StdioLogger = Logger<std::io::BufWriter<std::io::Stdout>>;
+pub type FileLogger = Logger<std::io::BufWriter<std::fs::File>>;
 
 impl<O: Output> Logger<O> {
     pub fn new(traces: Arc<Vec<String>>) -> Self {
@@ -376,6 +377,53 @@ impl Clone for StdioLogger {
             output: Output::new(),
             verbose: self.verbose,
         }
+    }
+}
+
+impl FileLogger {
+    pub fn with_output(
+        trace_file: std::io::BufWriter<std::fs::File>,
+        traces: Arc<Vec<String>>,
+    ) -> Self {
+        Self {
+            id: 0,
+            traces,
+            scope: vec![],
+            output: trace_file,
+            verbose: false,
+        }
+    }
+}
+
+impl Clone for FileLogger {
+    fn clone(&self) -> Self {
+        let output = std::fs::File::try_clone(self.output.get_ref()).unwrap();
+        let output = std::io::BufWriter::new(output);
+        Self {
+            id: self.id,
+            traces: self.traces.clone(),
+            scope: vec![],
+            output,
+            verbose: self.verbose,
+        }
+    }
+}
+
+impl Output for std::io::BufWriter<std::fs::File> {
+    type Io = Self;
+
+    fn new() -> Self {
+        panic!("cannot construct a file without a name")
+    }
+
+    fn write<F: FnOnce(&mut Self::Io) -> std::io::Result<()>>(
+        &mut self,
+        f: F,
+    ) -> std::io::Result<()> {
+        f(self)?;
+        use std::io::Write;
+        self.flush()?;
+        Ok(())
     }
 }
 
