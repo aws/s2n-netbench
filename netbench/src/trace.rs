@@ -397,15 +397,7 @@ impl FileLogger {
 
 impl Clone for FileLogger {
     fn clone(&self) -> Self {
-        let output = std::fs::File::try_clone(self.output.get_ref()).unwrap();
-        let output = std::io::BufWriter::new(output);
-        Self {
-            id: self.id,
-            traces: self.traces.clone(),
-            scope: vec![],
-            output,
-            verbose: self.verbose,
-        }
+        panic!("clone not supported for FileLogger")
     }
 }
 
