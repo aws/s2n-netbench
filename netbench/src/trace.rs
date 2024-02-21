@@ -5,7 +5,7 @@ use crate::{operation as op, timer::Timestamp, units::*};
 use core::fmt;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 
 mod usdt;
@@ -340,7 +340,7 @@ pub struct Logger<O: Output> {
 
 pub type MemoryLogger = Logger<std::io::Cursor<Vec<u8>>>;
 pub type StdioLogger = Logger<std::io::BufWriter<std::io::Stdout>>;
-pub type FileLogger = Logger<std::io::BufWriter<std::fs::File>>;
+pub type FileLogger = Logger<Arc<Mutex<std::io::BufWriter<std::fs::File>>>>;
 
 impl<O: Output> Logger<O> {
     pub fn new(traces: Arc<Vec<String>>) -> Self {
@@ -389,7 +389,7 @@ impl FileLogger {
             id: 0,
             traces,
             scope: vec![],
-            output: trace_file,
+            output: Arc::new(Mutex::new(trace_file)),
             verbose: false,
         }
     }
@@ -397,8 +397,7 @@ impl FileLogger {
 
 impl Clone for FileLogger {
     fn clone(&self) -> Self {
-        let output = std::fs::File::try_clone(self.output.get_ref()).unwrap();
-        let output = std::io::BufWriter::new(output);
+        let output = self.output.clone();
         Self {
             id: self.id,
             traces: self.traces.clone(),
@@ -409,8 +408,8 @@ impl Clone for FileLogger {
     }
 }
 
-impl Output for std::io::BufWriter<std::fs::File> {
-    type Io = Self;
+impl Output for Arc<Mutex<std::io::BufWriter<std::fs::File>>> {
+    type Io = std::io::BufWriter<std::fs::File>;
 
     fn new() -> Self {
         panic!("cannot construct a file without a name")
@@ -420,9 +419,10 @@ impl Output for std::io::BufWriter<std::fs::File> {
         &mut self,
         f: F,
     ) -> std::io::Result<()> {
-        f(self)?;
+        let mut writer = self.lock().unwrap();
+        f(&mut writer)?;
         use std::io::Write;
-        self.flush()?;
+        writer.flush()?;
         Ok(())
     }
 }
