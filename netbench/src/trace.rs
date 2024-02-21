@@ -421,8 +421,11 @@ impl Output for Arc<Mutex<std::io::BufWriter<std::fs::File>>> {
     ) -> std::io::Result<()> {
         let mut writer = self.lock().unwrap();
         f(&mut writer)?;
-        use std::io::Write;
-        writer.flush()?;
+
+        // Avoid flushing writes on each iteration since File I/O can get
+        // expensive. Instead rely on BufWriter to flush on Drop.
+        // https://doc.rust-lang.org/src/std/io/buffered/bufwriter.rs.html#673
+
         Ok(())
     }
 }
