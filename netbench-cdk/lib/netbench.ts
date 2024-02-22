@@ -29,9 +29,11 @@ export class NetbenchInfra extends cdk.Stack {
                 throw new Error('Unable to determine reporting bucket suffix');
             }
             const distBucket = this.createS3Bucket(bucketName, true);
+            new cdk.CfnOutput(this, "output:NetbenchRunnerPublicLogsBucket", { value: distBucket.bucketName })
             this.createCloudFront('CFdistribution', distBucket);
             // Create the private source code bucket, without any distribution.
             const srcCodeBucket = this.createS3Bucket(`netbenchrunner-private-source-${props.bucketSuffix}`, false);
+            new cdk.CfnOutput(this, "output:NetbenchRunnerPrivateSrcBucket", { value: srcCodeBucket.bucketName })
         }
     }
 
