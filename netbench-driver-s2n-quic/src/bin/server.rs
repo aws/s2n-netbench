@@ -12,13 +12,13 @@ use tokio::spawn;
 static ALLOCATOR: Allocator = Allocator::new();
 
 fn main() -> Result<()> {
-    let args = Server::parse();
+    let args = NetbenchServer::parse();
     let runtime = args.opts.runtime();
     runtime.block_on(args.run())
 }
 
 #[derive(Debug, Parser)]
-pub struct Server {
+pub struct NetbenchServer {
     #[command(flatten)]
     opts: netbench_driver::Server,
 
@@ -29,7 +29,7 @@ pub struct Server {
     disable_gso: bool,
 }
 
-impl Server {
+impl NetbenchServer {
     pub async fn run(&self) -> Result<()> {
         let scenario = self.opts.scenario();
         let trace = self.opts.trace();

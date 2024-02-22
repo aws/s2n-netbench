@@ -5,7 +5,7 @@ use crate::{operation as op, timer::Timestamp, units::*};
 use core::fmt;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 
 mod usdt;
@@ -340,6 +340,7 @@ pub struct Logger<O: Output> {
 
 pub type MemoryLogger = Logger<std::io::Cursor<Vec<u8>>>;
 pub type StdioLogger = Logger<std::io::BufWriter<std::io::Stdout>>;
+pub type FileLogger = Logger<Arc<Mutex<std::io::BufWriter<std::fs::File>>>>;
 
 impl<O: Output> Logger<O> {
     pub fn new(traces: Arc<Vec<String>>) -> Self {
@@ -376,6 +377,56 @@ impl Clone for StdioLogger {
             output: Output::new(),
             verbose: self.verbose,
         }
+    }
+}
+
+impl FileLogger {
+    pub fn with_output(
+        trace_file: std::io::BufWriter<std::fs::File>,
+        traces: Arc<Vec<String>>,
+    ) -> Self {
+        Self {
+            id: 0,
+            traces,
+            scope: vec![],
+            output: Arc::new(Mutex::new(trace_file)),
+            verbose: false,
+        }
+    }
+}
+
+impl Clone for FileLogger {
+    fn clone(&self) -> Self {
+        let output = self.output.clone();
+        Self {
+            id: self.id,
+            traces: self.traces.clone(),
+            scope: vec![],
+            output,
+            verbose: self.verbose,
+        }
+    }
+}
+
+impl Output for Arc<Mutex<std::io::BufWriter<std::fs::File>>> {
+    type Io = std::io::BufWriter<std::fs::File>;
+
+    fn new() -> Self {
+        panic!("cannot construct a file without a name")
+    }
+
+    fn write<F: FnOnce(&mut Self::Io) -> std::io::Result<()>>(
+        &mut self,
+        f: F,
+    ) -> std::io::Result<()> {
+        let mut writer = self.lock().unwrap();
+        f(&mut writer)?;
+
+        // Avoid flushing writes on each iteration since File I/O can get
+        // expensive. Instead rely on BufWriter to flush on Drop.
+        // https://doc.rust-lang.org/src/std/io/buffered/bufwriter.rs.html#673
+
+        Ok(())
     }
 }
 

@@ -8,6 +8,7 @@ use netbench::{
     units::Byte,
     Error, Result,
 };
+use std::path::PathBuf;
 use std::{net::IpAddr, ops::Deref, path::Path, str::FromStr, sync::Arc, time::Duration};
 
 mod alloc;
@@ -37,6 +38,9 @@ pub struct Server {
 
     #[arg(long, default_value = "throughput", env = "TRACE")]
     pub trace: Vec<Trace>,
+
+    #[arg(long, env = "TRACE_FILE")]
+    pub trace_file: Option<PathBuf>,
 
     #[arg(long, short = 'V')]
     pub verbose: bool,
@@ -94,7 +98,12 @@ impl Server {
     }
 
     pub fn trace(&self) -> impl trace::Trace + Clone {
-        traces(&self.trace[..], self.verbose, &self.scenario.traces)
+        traces(
+            &self.trace[..],
+            &self.trace_file,
+            self.verbose,
+            &self.scenario.traces,
+        )
     }
 
     pub fn multiplex(&self) -> Option<multiplex::Config> {
@@ -121,6 +130,9 @@ pub struct Client {
 
     #[arg(long, default_value = "throughput", env = "TRACE")]
     pub trace: Vec<Trace>,
+
+    #[arg(long, env = "TRACE_FILE")]
+    pub trace_file: Option<PathBuf>,
 
     #[arg(long, short = 'V')]
     pub verbose: bool,
@@ -185,7 +197,12 @@ impl Client {
     }
 
     pub fn trace(&self) -> impl trace::Trace + Clone {
-        traces(&self.trace[..], self.verbose, &self.scenario.traces)
+        traces(
+            &self.trace[..],
+            &self.trace_file,
+            self.verbose,
+            &self.scenario.traces,
+        )
     }
 
     pub fn multiplex(&self) -> Option<multiplex::Config> {
@@ -247,7 +264,12 @@ impl Deref for Scenario {
     }
 }
 
-fn traces(trace: &[Trace], verbose: bool, traces: &Arc<Vec<String>>) -> impl trace::Trace + Clone {
+fn traces(
+    trace: &[Trace],
+    trace_file: &Option<PathBuf>,
+    verbose: bool,
+    traces: &Arc<Vec<String>>,
+) -> impl trace::Trace + Clone {
     let enabled = !trace.iter().any(|v| matches!(v, Trace::Disabled));
 
     let throughput = if enabled && trace.iter().any(|v| matches!(v, Trace::Throughput)) {
@@ -266,7 +288,17 @@ fn traces(trace: &[Trace], verbose: bool, traces: &Arc<Vec<String>>) -> impl tra
         None
     };
 
+    let trace_file = if let Some(trace_file) = trace_file {
+        let trace_file = std::fs::File::create(trace_file).unwrap();
+        let trace_file = std::io::BufWriter::new(trace_file);
+        let mut trace = trace::FileLogger::with_output(trace_file, traces.clone());
+        trace.verbose(verbose);
+        Some(trace)
+    } else {
+        None
+    };
+
     let usdt = trace::Usdt::default();
 
-    (usdt, (throughput, stdio))
+    (usdt, (throughput, (stdio, trace_file)))
 }

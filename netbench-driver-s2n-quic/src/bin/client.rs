@@ -11,13 +11,13 @@ use std::collections::HashSet;
 static ALLOCATOR: Allocator = Allocator::new();
 
 fn main() -> Result<()> {
-    let args = Client::parse();
+    let args = NetbenchClient::parse();
     let runtime = args.opts.runtime();
     runtime.block_on(args.run())
 }
 
 #[derive(Debug, Parser)]
-pub struct Client {
+pub struct NetbenchClient {
     #[command(flatten)]
     opts: netbench_driver::Client,
 
@@ -28,7 +28,7 @@ pub struct Client {
     disable_gso: bool,
 }
 
-impl Client {
+impl NetbenchClient {
     pub async fn run(&self) -> Result<()> {
         let addresses = self.opts.address_map().await?;
         let scenario = self.opts.scenario();
