@@ -9,6 +9,7 @@ import * as logs from 'aws-cdk-lib/aws-logs'
 import { Config, NetbenchStackProps } from './config';
 import path from 'path';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
+import { Effect } from 'aws-cdk-lib/aws-iam';
 
 export class NetbenchInfra extends cdk.Stack {
     private config: Config = new Config;
@@ -19,6 +20,7 @@ export class NetbenchInfra extends cdk.Stack {
         this.createVPC();
         this.createCloudwatchGroup();
         this.createRole();
+        const GHAUser = this.createGHAIamUser();
         // We're over-riding CF's naming scheme so this name 
         // must be globally unique. By default, AWSStage will be username.
         if (props?.reportStack) {
@@ -28,12 +30,18 @@ export class NetbenchInfra extends cdk.Stack {
             } else {
                 throw new Error('Unable to determine reporting bucket suffix');
             }
+            // Create the public logs bucket
             const distBucket = this.createS3Bucket(bucketName, true);
             new cdk.CfnOutput(this, "output:NetbenchRunnerPublicLogsBucket", { value: distBucket.bucketName })
             this.createCloudFront('CFdistribution', distBucket);
+
             // Create the private source code bucket, without any distribution.
             const srcCodeBucket = this.createS3Bucket(`netbenchrunner-private-source-${props.bucketSuffix}`, false);
             new cdk.CfnOutput(this, "output:NetbenchRunnerPrivateSrcBucket", { value: srcCodeBucket.bucketName })
+
+            // Stitch together the buckets, a policy, and the GHA user
+            distBucket.grantReadWrite(GHAUser);
+            srcCodeBucket.grantReadWrite(GHAUser);
         }
     }
 
@@ -49,20 +57,20 @@ export class NetbenchInfra extends cdk.Stack {
             placementGroupName: 'NetbenchRunnerPlacementGroupCluster',
             strategy: ec2.PlacementGroupStrategy.CLUSTER
         });
-        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupCluster", { value: cluster.placementGroupName})
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupCluster", { value: cluster.placementGroupName })
         // Max 7 partitions per AZ: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
         const partition = new ec2.PlacementGroup(this, 'Partition', {
             placementGroupName: 'NetbenchRunnerPlacementGroupPartition',
             partitions: 7,
             strategy: ec2.PlacementGroupStrategy.PARTITION
         });
-        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupPartition", { value: partition.placementGroupName})
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupPartition", { value: partition.placementGroupName })
         const spread = new ec2.PlacementGroup(this, 'Spread', {
             placementGroupName: 'NetbenchRunnerPlacementGroupSpread',
             spreadLevel: ec2.PlacementGroupSpreadLevel.RACK,
             strategy: ec2.PlacementGroupStrategy.SPREAD
         })
-        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupSpread", { value: spread.placementGroupName})
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupSpread", { value: spread.placementGroupName })
     }
     private createVPC() {
         // Creating VPC for clients and servers
@@ -108,6 +116,26 @@ export class NetbenchInfra extends cdk.Stack {
         // TODO: This is too permissive- scope this down to just the netbench bucket.
         instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'));
     };
+
+    private createGHAIamUser(): cdk.aws_iam.User {
+        return new cdk.aws_iam.User(this, "s2n-netbench-githubactions", { userName: "s2n-netbench-githubactions" });
+    }
+
+    /* For now, let CDK create this policy with bucket.GrantReadWrite()
+    private createGHAIamPolicy(s3Bucket: cdk.aws_s3.Bucket): cdk.aws_iam.Policy {
+        return new cdk.aws_iam.Policy(this, "s2n-netbench-githubactions-policy", {
+            statements: [new iam.PolicyStatement({
+                effect: Effect.ALLOW,
+                actions: ["s3:PutObject",
+                    "s3:GetObject",
+                    "s3:AbortMultipartUpload",
+                    "s3:ListBucket",
+                    "s3:GetObjectVersion"],
+                resources: [s3Bucket.bucketArn, s3Bucket.bucketArn + "/*"],
+            })]
+        });
+    }
+    */
 
     private createS3Bucket(id: string, reportBucket: boolean): cdk.aws_s3.Bucket {
         // NOTE: putting the bucketName in the bucketProperties
