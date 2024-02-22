@@ -9,7 +9,6 @@ import * as logs from 'aws-cdk-lib/aws-logs'
 import { Config, NetbenchStackProps } from './config';
 import path from 'path';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
-import { Effect } from 'aws-cdk-lib/aws-iam';
 
 export class NetbenchInfra extends cdk.Stack {
     private config: Config = new Config;
@@ -86,8 +85,16 @@ export class NetbenchInfra extends cdk.Stack {
             ],
 
         });
-        //Netbench Orchistrator is expecting only one tagged subnet.
-        cdk.Tags.of(vpc.publicSubnets[0]).add('aws-cdk:subnet-name', 'public-subnet-for-runners');
+        
+        //Tag all available subnets the same. This behavior might need to change when MultiRegion is added.
+        const subnetTagKey = "aws-cdk:netbench-subnet-name";
+        const subnetTagValue = "public-subnet-for-netbench-runners";
+        vpc.publicSubnets.forEach(element => {
+          cdk.Tags.of(element).add(subnetTagKey, subnetTagValue);
+        });
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagKey", { value: subnetTagKey});
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagValue", { value: subnetTagValue});
+        new cdk.CfnOutput(this, "output:"+this.stackName+"Region", { value: this.region});
     };
     private createCloudFront(id: string, bucket: IBucket) {
         const cfDistribution = new cloudfront.Distribution(this, id, {
@@ -97,7 +104,7 @@ export class NetbenchInfra extends cdk.Stack {
             },
             defaultRootObject: "index.html"
         });
-        new cdk.CfnOutput(this, 'NetbenchCloudfrontDistribution', { value: "https://" + cfDistribution.distributionDomainName });
+        new cdk.CfnOutput(this, 'output:NetbenchCloudfrontDistribution', { value: "https://" + cfDistribution.distributionDomainName });
     };
 
     private createRole() {
@@ -109,7 +116,7 @@ export class NetbenchInfra extends cdk.Stack {
         // Create an instance profile to allow ec2 to use the role.
         // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html
         const instanceProfile = new iam.InstanceProfile(this, 'instanceProfile', { role: instanceRole })
-        new cdk.CfnOutput(this, "NetbenchRunnerInstanceProfile", { value: instanceProfile.instanceProfileName })
+        new cdk.CfnOutput(this, "output:NetbenchRunnerInstanceProfile", { value: instanceProfile.instanceProfileName })
 
         // Attach managed policies to the IAM role
         instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));

@@ -10,6 +10,9 @@ cdk.out
 # After bootstrapping this has regions
 cdk.context.json
 
+# CDK output
+cdk_config.json
+
 ### CDK-specific ignores ###
 *.swp
 cdk.context.json
