@@ -137,7 +137,7 @@ jobs:
         id: s3
         run: |
           TARGET="${{ github.sha }}/doc"
-          aws s3 sync target/doc "s3://netbenchrunnerlogs-prod/$TARGET" --acl private --follow-symlinks
+          aws s3 sync target/doc "s3://netbenchrunnerlogs-public-prod/$TARGET" --acl private --follow-symlinks
           URL="$CDN/$TARGET/s2n_netbench/index.html"
           echo "URL=$URL" >> $GITHUB_OUTPUT
 
@@ -313,7 +313,7 @@ jobs:
         id: s3
         run: |
           TARGET="${{ github.sha }}/netbench"
-          aws s3 sync reports "s3://netbenchrunnerlogs-prod/$TARGET" --acl private --follow-symlinks
+          aws s3 sync reports "s3://netbenchrunnerlogs-public-prod/$TARGET" --acl private --follow-symlinks
           URL="$CDN/$TARGET/index.html"
           echo "URL=$URL" >> $GITHUB_OUTPUT
 
