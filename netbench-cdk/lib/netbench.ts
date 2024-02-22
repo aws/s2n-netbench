@@ -47,17 +47,20 @@ export class NetbenchInfra extends cdk.Stack {
             placementGroupName: 'NetbenchRunnerPlacementGroupCluster',
             strategy: ec2.PlacementGroupStrategy.CLUSTER
         });
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupCluster", { value: cluster.placementGroupName})
         // Max 7 partitions per AZ: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
         const partition = new ec2.PlacementGroup(this, 'Partition', {
             placementGroupName: 'NetbenchRunnerPlacementGroupPartition',
             partitions: 7,
             strategy: ec2.PlacementGroupStrategy.PARTITION
         });
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupPartition", { value: partition.placementGroupName})
         const spread = new ec2.PlacementGroup(this, 'Spread', {
             placementGroupName: 'NetbenchRunnerPlacementGroupSpread',
             spreadLevel: ec2.PlacementGroupSpreadLevel.RACK,
             strategy: ec2.PlacementGroupStrategy.SPREAD
         })
+        new cdk.CfnOutput(this, "output:NetbenchRunnerPlacementGroupSpread", { value: spread.placementGroupName})
     }
     private createVPC() {
         // Creating VPC for clients and servers
