@@ -18,7 +18,7 @@ endif
 
 deploy: build
 ifdef DEV_ACCOUNT_ID
-	cdk deploy NetbenchInfraDev-$(USER) --require-approval never
+	cdk deploy NetbenchInfraDev-$(USER) --require-approval never -O cdk_config.json
 endif
 
 state-backup:

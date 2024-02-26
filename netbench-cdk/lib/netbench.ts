@@ -15,10 +15,10 @@ export class NetbenchInfra extends cdk.Stack {
 
     constructor(scope: Construct, id: string, props?: NetbenchStackProps) {
         super(scope, id, props);
-        this.createPlacementGroups();
         this.createVPC();
         this.createCloudwatchGroup();
         this.createRole();
+        const GHAUser = this.createGHAIamUser();
         // We're over-riding CF's naming scheme so this name 
         // must be globally unique. By default, AWSStage will be username.
         if (props?.reportStack) {
@@ -28,10 +28,18 @@ export class NetbenchInfra extends cdk.Stack {
             } else {
                 throw new Error('Unable to determine reporting bucket suffix');
             }
+            // Create the public logs bucket
             const distBucket = this.createS3Bucket(bucketName, true);
+            new cdk.CfnOutput(this, "output:NetbenchRunnerPublicLogsBucket", { value: distBucket.bucketName })
             this.createCloudFront('CFdistribution', distBucket);
+
             // Create the private source code bucket, without any distribution.
             const srcCodeBucket = this.createS3Bucket(`netbenchrunner-private-source-${props.bucketSuffix}`, false);
+            new cdk.CfnOutput(this, "output:NetbenchRunnerPrivateSrcBucket", { value: srcCodeBucket.bucketName })
+
+            // Stitch together the buckets, a policy, and the GHA user
+            distBucket.grantReadWrite(GHAUser);
+            srcCodeBucket.grantReadWrite(GHAUser);
         }
     }
 
@@ -42,23 +50,6 @@ export class NetbenchInfra extends cdk.Stack {
         new cdk.CfnOutput(this, "output:NetbenchRunnerLogGroup", { value: logGroup.logGroupName })
     }
 
-    private createPlacementGroups() {
-        const cluster = new ec2.PlacementGroup(this, 'Cluster', {
-            placementGroupName: 'NetbenchRunnerPlacementGroupCluster',
-            strategy: ec2.PlacementGroupStrategy.CLUSTER
-        });
-        // Max 7 partitions per AZ: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
-        const partition = new ec2.PlacementGroup(this, 'Partition', {
-            placementGroupName: 'NetbenchRunnerPlacementGroupPartition',
-            partitions: 7,
-            strategy: ec2.PlacementGroupStrategy.PARTITION
-        });
-        const spread = new ec2.PlacementGroup(this, 'Spread', {
-            placementGroupName: 'NetbenchRunnerPlacementGroupSpread',
-            spreadLevel: ec2.PlacementGroupSpreadLevel.RACK,
-            strategy: ec2.PlacementGroupStrategy.SPREAD
-        })
-    }
     private createVPC() {
         // Creating VPC for clients and servers
         const vpc = new ec2.Vpc(this, 'vpc', {
@@ -73,8 +64,16 @@ export class NetbenchInfra extends cdk.Stack {
             ],
 
         });
-        //Netbench Orchistrator is expecting only one tagged subnet.
-        cdk.Tags.of(vpc.publicSubnets[0]).add('aws-cdk:subnet-name', 'public-subnet-for-runners');
+        
+        //Tag all available subnets the same. This behavior might need to change when MultiRegion is added.
+        const subnetTagKey = "aws-cdk:netbench-subnet-name";
+        const subnetTagValue = "public-subnet-for-netbench-runners";
+        vpc.publicSubnets.forEach(element => {
+          cdk.Tags.of(element).add(subnetTagKey, subnetTagValue);
+        });
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagKey", { value: subnetTagKey});
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagValue", { value: subnetTagValue});
+        new cdk.CfnOutput(this, "output:"+this.stackName+"Region", { value: this.region});
     };
     private createCloudFront(id: string, bucket: IBucket) {
         const cfDistribution = new cloudfront.Distribution(this, id, {
@@ -84,7 +83,7 @@ export class NetbenchInfra extends cdk.Stack {
             },
             defaultRootObject: "index.html"
         });
-        new cdk.CfnOutput(this, 'NetbenchCloudfrontDistribution', { value: "https://" + cfDistribution.distributionDomainName });
+        new cdk.CfnOutput(this, 'output:NetbenchCloudfrontDistribution', { value: "https://" + cfDistribution.distributionDomainName });
     };
 
     private createRole() {
@@ -96,13 +95,33 @@ export class NetbenchInfra extends cdk.Stack {
         // Create an instance profile to allow ec2 to use the role.
         // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html
         const instanceProfile = new iam.InstanceProfile(this, 'instanceProfile', { role: instanceRole })
-        new cdk.CfnOutput(this, "NetbenchRunnerInstanceProfile", { value: instanceProfile.instanceProfileName })
+        new cdk.CfnOutput(this, "output:NetbenchRunnerInstanceProfile", { value: instanceProfile.instanceProfileName })
 
         // Attach managed policies to the IAM role
         instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
         // TODO: This is too permissive- scope this down to just the netbench bucket.
         instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'));
     };
+
+    private createGHAIamUser(): cdk.aws_iam.User {
+        return new cdk.aws_iam.User(this, "s2n-netbench-githubactions", { userName: "s2n-netbench-githubactions" });
+    }
+
+    /* For now, let CDK create this policy with bucket.GrantReadWrite()
+    private createGHAIamPolicy(s3Bucket: cdk.aws_s3.Bucket): cdk.aws_iam.Policy {
+        return new cdk.aws_iam.Policy(this, "s2n-netbench-githubactions-policy", {
+            statements: [new iam.PolicyStatement({
+                effect: Effect.ALLOW,
+                actions: ["s3:PutObject",
+                    "s3:GetObject",
+                    "s3:AbortMultipartUpload",
+                    "s3:ListBucket",
+                    "s3:GetObjectVersion"],
+                resources: [s3Bucket.bucketArn, s3Bucket.bucketArn + "/*"],
+            })]
+        });
+    }
+    */
 
     private createS3Bucket(id: string, reportBucket: boolean): cdk.aws_s3.Bucket {
         // NOTE: putting the bucketName in the bucketProperties
