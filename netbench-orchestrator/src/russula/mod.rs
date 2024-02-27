@@ -43,6 +43,50 @@ macro_rules! state_api {
     $state:ident
 } => {paste!{
 
+    $(#[$meta])*
+    pub async fn [<run_till_ $state>](&mut self) -> RussulaResult<()> {
+        while self.[<poll_ $state>]().await?.is_pending() {
+            tokio::time::sleep(self.poll_delay).await;
+        }
+
+        Ok(())
+    }
+
+    $(#[$meta])*
+    pub async fn [<poll_ $state>](&mut self) -> RussulaResult<Poll<()>> {
+        // Poll each peer protocol instance.
+        //
+        // If the peer is already in the desired state then this should be a noop.
+        for peer in self.instance_list.iter_mut() {
+            if let Err(err) = peer.protocol.[<poll_ $state>](&peer.stream).await {
+                if err.is_fatal() {
+                    error!("{} {}", err, peer.addr);
+                    panic!("{} {}", err, peer.addr);
+                }
+            }
+        }
+
+        // Check that all instances are at the desired state.
+        let poll = if self.[<is_ $state _state>]() {
+            Poll::Ready(())
+        } else {
+            Poll::Pending
+        };
+        Ok(poll)
+    }
+
+    /// Check if all instances are at the desired state
+    fn [< is_ $state _state>](&self) -> bool {
+        for peer in self.instance_list.iter() {
+            // All instance must be at the desired state
+            if !peer.protocol.[< is_ $state _state>]() {
+                return false;
+            }
+        }
+        true
+    }
+}};
+}
 
 impl<P: Protocol + Send> Russula<P> {
     state_api!(ready);
