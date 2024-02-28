@@ -131,7 +131,7 @@ impl<P: Protocol> RussulaBuilder<P> {
                         dbg: "Failed to connect to peer".to_string(),
                     });
                 }
-                match protocol.connect(&addr).await {
+                match protocol.pair_peer(&addr).await {
                     Ok(connect) => {
                         info!("Coordinator: successfully connected to {}", addr);
                         stream_protocol_list.push(ProtocolInstance {

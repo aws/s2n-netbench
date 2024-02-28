@@ -83,6 +83,38 @@ impl Protocol for CoordProtocol {
         CoordState::WorkersRunning
     }
 
+    async fn run(&mut self, stream: &TcpStream) -> RussulaResult<Option<Msg>> {
+        match self.state_mut() {
+            CoordState::CheckWorker => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            CoordState::Ready => {
+                self.transition_self_or_user_driven(stream).await?;
+                Ok(None)
+            }
+            CoordState::RunWorker => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            CoordState::WorkersRunning => {
+                self.transition_self_or_user_driven(stream).await?;
+                Ok(None)
+            }
+            CoordState::KillWorker => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            CoordState::WorkerKilled => {
+                self.transition_self_or_user_driven(stream).await?;
+                Ok(None)
+            }
+            CoordState::Done => {
+                notify_peer!(self, stream);
+                Ok(None)
+            }
+        }
+    }
 
     fn event_recorder(&mut self) -> &mut EventRecorder {
         &mut self.event_recorder

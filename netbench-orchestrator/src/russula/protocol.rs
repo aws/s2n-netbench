@@ -69,7 +69,7 @@ pub trait Protocol: Clone {
     // Run operations for the current state.
     async fn run(&mut self, stream: &TcpStream) -> RussulaResult<Option<Msg>>;
 
-    // Identifies used primarily for debugging.
+    // Identifies used for debugging and creating unique log files.
     fn name(&self) -> String;
 
     // Retrieve the current state.

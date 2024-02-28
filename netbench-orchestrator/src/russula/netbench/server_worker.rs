@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, net::SocketAddr, process::Command};
 use sysinfo::{Pid, PidExt, ProcessExt, SystemExt};
 use tokio::net::{TcpListener, TcpStream};
+use tracing::error;
 use tracing::{debug, info};
 
 // Only used when creating a state variant for comparison
@@ -96,6 +97,90 @@ impl Protocol for WorkerProtocol {
         unimplemented!("Should only be called by Coordinators")
     }
 
+    async fn run(&mut self, stream: &TcpStream) -> RussulaResult<Option<Msg>> {
+        match self.state_mut() {
+            WorkerState::WaitCoordInit => self.await_next_msg(stream).await,
+            WorkerState::Ready => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::Run => {
+                let child = match &self.netbench_ctx.testing {
+                    false => {
+                        let output_log_file = format!("{}.json", self.name());
+                        let output_log_file =
+                            File::create(output_log_file).expect("failed to open log");
+
+                        info!("{} run task netbench", self.name());
+                        println!("{} run task netbench", self.name());
+
+                        let netbench_path = self.netbench_ctx.netbench_path.to_str().unwrap();
+                        let collector = format!("{}/s2n-netbench-collector", netbench_path);
+                        let driver = format!("{}/{}", netbench_path, self.netbench_ctx.driver);
+                        let scenario = format!("{}/{}", netbench_path, self.netbench_ctx.scenario);
+                        debug!("netbench_port: {}", self.netbench_ctx.netbench_port);
+
+                        let mut cmd = Command::new(collector);
+                        cmd.env("PORT", self.netbench_ctx.netbench_port.to_string());
+                        cmd.args([&driver, "--scenario", &scenario])
+                            .stdout(output_log_file);
+                        println!("{:?}", cmd);
+                        debug!("{:?}", cmd);
+                        cmd.spawn()
+                            .expect("Failed to start netbench server process")
+                    }
+                    true => {
+                        info!("{} run task sim_netbench_server", self.name());
+                        Command::new("sh")
+                            .args(["scripts/sim_netbench_server.sh", &self.name()])
+                            .spawn()
+                            .expect("Failed to start echo process")
+                    }
+                };
+
+                let pid = child.id();
+                debug!(
+                    "{}----------------------------child id {}",
+                    self.name(),
+                    pid
+                );
+
+                *self.state_mut() = WorkerState::RunningAwaitKill(pid);
+                Ok(None)
+            }
+            WorkerState::RunningAwaitKill(_pid) => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::Killing(pid) => {
+                let pid = Pid::from_u32(*pid);
+                // TODO test only loading the process id we care about
+                let mut system = sysinfo::System::new_all();
+                if system.refresh_process(pid) {
+                    let process = system.process(pid).unwrap();
+                    let kill = process.kill();
+                    debug!("did KILL pid: {} {}----------------------------", pid, kill);
+                } else {
+                    // log an error but continue since the process is not gone
+                    error!(
+                        "netbench process not found. pid: {} ----------------------------",
+                        pid
+                    );
+                }
+
+                self.transition_self_or_user_driven(stream).await?;
+                Ok(None)
+            }
+            WorkerState::Stopped => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::Done => {
+                notify_peer!(self, stream);
+                Ok(None)
+            }
+        }
+    }
 
     fn event_recorder(&mut self) -> &mut EventRecorder {
         &mut self.event_recorder

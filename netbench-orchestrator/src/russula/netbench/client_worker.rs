@@ -95,6 +95,116 @@ impl Protocol for WorkerProtocol {
     fn worker_running_state(&self) -> Self::State {
         unimplemented!("Should only be called by Coordinators")
     }
+
+    async fn run(&mut self, stream: &TcpStream) -> RussulaResult<Option<Msg>> {
+        match self.state_mut() {
+            WorkerState::WaitCoordInit => self.await_next_msg(stream).await,
+            WorkerState::Ready => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::Run => {
+                let child = match &self.netbench_ctx.testing {
+                    false => {
+                        let output_log_file = format!("{}.json", self.name());
+                        let output_log_file =
+                            File::create(output_log_file).expect("failed to open log");
+
+                        info!("{} run netbench process", self.name());
+                        println!("{} run netbench process", self.name());
+
+                        let netbench_path = self.netbench_ctx.netbench_path.to_str().unwrap();
+                        let collector = format!("{}/s2n-netbench-collector", netbench_path);
+                        let driver = format!("{}/{}", netbench_path, self.netbench_ctx.driver);
+                        let scenario = format!("{}/{}", netbench_path, self.netbench_ctx.scenario);
+
+                        let mut cmd = Command::new(collector);
+                        for (i, peer_list) in self.netbench_ctx.netbench_servers.iter().enumerate()
+                        {
+                            let server_idx = format!("SERVER_{}", i);
+                            cmd.env(server_idx, peer_list.to_string());
+                        }
+                        cmd.args([&driver, "--scenario", &scenario])
+                            .stdout(output_log_file);
+                        println!("{:?}", cmd);
+                        debug!("{:?}", cmd);
+                        cmd.spawn()
+                            .expect("Failed to start netbench client process")
+                    }
+                    true => {
+                        info!("{} run sim_netbench_client", self.name());
+                        Command::new("sh")
+                            .args(["scripts/sim_netbench_client.sh", &self.name()])
+                            .spawn()
+                            .expect("Failed to start sim_netbench_client process")
+                    }
+                };
+
+                let pid = child.id();
+                debug!(
+                    "{}----------------------------child id {}",
+                    self.name(),
+                    pid
+                );
+
+                *self.state_mut() = WorkerState::Running(pid);
+                Ok(None)
+            }
+            WorkerState::Running(_pid) => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::RunningAwaitComplete(pid) => {
+                let pid = Pid::from_u32(*pid);
+                notify_peer!(self, stream);
+
+                // TODO test only loading the process id we care about
+                let system = sysinfo::System::new_all();
+                let process = system.process(pid);
+                if let Some(process) = process {
+                    debug!(
+                        "process still RUNNING! pid: {} status: {:?} ----------------------------",
+                        process.pid(),
+                        process.status()
+                    );
+                    // FIXME somethings is causing the collector to become a Zombie process.
+                    //
+                    // We can detect the zombie process and continue with Russula shutdown, which
+                    // causes the process to be killed. This indicates that Russula is possibly
+                    // preventing a clean close of the collector.
+                    //
+                    // root       54245  Sl ./target/debug/russula_cli --protocol NetbenchClientWorker --port 9000 --peer-list 54.198.168.151:4433
+                    // root       54688  Z  [netbench-collec] <defunct>
+
+                    if let sysinfo::ProcessStatus::Zombie = process.status() {
+                        warn!(
+                            "Process pid: {} is a Zombie.. ignoring and continuing",
+                            process.pid()
+                        );
+                        self.transition_self_or_user_driven(stream).await?;
+                    }
+                } else {
+                    info!(
+                        "Process COMPLETED! pid: {} ----------------------------",
+                        pid
+                    );
+
+                    self.transition_self_or_user_driven(stream).await?;
+                }
+
+                Ok(None)
+            }
+            WorkerState::Stopped => {
+                notify_peer!(self, stream);
+                self.await_next_msg(stream).await
+            }
+            WorkerState::Done => {
+                notify_peer!(self, stream);
+                Ok(None)
+            }
+        }
+    }
+
     fn event_recorder(&mut self) -> &mut EventRecorder {
         &mut self.event_recorder
     }
