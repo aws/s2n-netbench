@@ -57,7 +57,6 @@ async fn write_msg(stream: &TcpStream, msg: Msg) -> RussulaResult<usize> {
     data.extend(msg.data);
 
     let msg = stream.try_write(&data).map_err(log_fatal_error)?;
-    // stream.flush().await.map_err(log_fatal_error)?;
     Ok(msg)
 }
 
