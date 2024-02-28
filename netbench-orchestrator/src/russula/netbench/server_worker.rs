@@ -71,6 +71,9 @@ impl Protocol for WorkerProtocol {
     }
 
     fn update_peer_state(&mut self, msg: Msg) -> RussulaResult<()> {
+        // MARKME this error handling could be relaxed since its not critical to the
+        // protocol operation. However, an error here could signal other issues so
+        // it's better to emit an error and abort.
         self.peer_state = CoordState::from_msg(msg)?;
         debug!("{} ... peer_state {:?}", self.name(), self.peer_state);
 

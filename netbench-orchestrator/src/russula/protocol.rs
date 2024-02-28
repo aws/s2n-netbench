@@ -45,11 +45,11 @@ macro_rules! state_api {
 macro_rules! notify_peer {
 {$protocol:ident, $stream:ident} => {
     use crate::russula::network_utils;
-    let msg = Msg::new($protocol.state().as_bytes());
+    let msg = Msg::new($protocol.state().as_bytes()).expect("expect msg");
     debug!(
         "{} ----> send msg {}",
         $protocol.name(),
-        std::str::from_utf8(&msg.data).unwrap()
+        &msg.as_str()
     );
     network_utils::send_msg($stream, msg).await?;
     $protocol.on_event(EventType::SendMsg);
@@ -167,11 +167,7 @@ pub trait Protocol: Clone {
             match network_utils::recv_msg(stream).await {
                 Ok(msg) => {
                     self.on_event(EventType::RecvMsg);
-                    debug!(
-                        "{} <---- recv msg {}",
-                        self.name(),
-                        std::str::from_utf8(&msg.data).unwrap()
-                    );
+                    debug!("{} <---- recv msg {}", self.name(), &msg.as_str());
 
                     let should_transition = self.matches_transition_msg(&msg)?;
                     last_msg = Some(msg);
@@ -204,8 +200,9 @@ pub trait Protocol: Clone {
             debug!(
                 "{} expect: {} actual: {}",
                 self.name(),
-                std::str::from_utf8(&expected_msg).unwrap(),
-                std::str::from_utf8(&recv_msg.data).unwrap()
+                std::str::from_utf8(&expected_msg)
+                    .expect("AwaitNext should contain valid string slices"),
+                recv_msg.as_str()
             );
             Ok(should_transition_to_next)
         } else {

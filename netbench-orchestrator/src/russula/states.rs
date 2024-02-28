@@ -34,17 +34,12 @@ pub trait StateApi: Debug + Serialize + for<'a> Deserialize<'a> {
     }
 
     fn from_msg(msg: Msg) -> RussulaResult<Self> {
-        let msg_str = std::str::from_utf8(&msg.data).map_err(|_err| RussulaError::BadMsg {
-            dbg: format!(
-                "received a malformed msg. len: {} data: {:?}",
-                msg.len, msg.data
-            ),
-        })?;
-
+        let msg_str = msg.as_str();
         serde_json::from_str(msg_str).map_err(|_err| RussulaError::BadMsg {
             dbg: format!(
                 "received a malformed msg. len: {} data: {:?}",
-                msg.len, msg.data
+                msg.payload_len(),
+                msg.as_str()
             ),
         })
     }

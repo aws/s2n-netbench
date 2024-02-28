@@ -9,6 +9,7 @@ pub type RussulaResult<T, E = RussulaError> = Result<T, E>;
 pub enum RussulaError {
     NetworkConnectionRefused { dbg: String },
     NetworkFail { dbg: String },
+    ReadFail { dbg: String },
     NetworkBlocked { dbg: String },
     BadMsg { dbg: String },
 }
@@ -20,6 +21,7 @@ impl std::fmt::Display for RussulaError {
                 write!(f, "NetworkConnectionRefused {}", dbg)
             }
             RussulaError::NetworkFail { dbg } => write!(f, "NetworkFail {}", dbg),
+            RussulaError::ReadFail { dbg } => write!(f, "ReadFail {}", dbg),
             RussulaError::NetworkBlocked { dbg } => write!(f, "NetworkBlocked {}", dbg),
             RussulaError::BadMsg { dbg } => write!(f, "BadMsg {}", dbg),
         }
