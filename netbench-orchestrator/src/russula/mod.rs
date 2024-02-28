@@ -178,8 +178,6 @@ mod tests {
 
     #[tokio::test]
     async fn netbench_server_protocol() {
-        env_logger::init();
-
         let mut worker_addrs = Vec::new();
         let mut workers = Vec::new();
         macro_rules! worker {
@@ -246,7 +244,6 @@ mod tests {
 
     #[tokio::test]
     async fn netbench_client_protocol() {
-        env_logger::init();
         let mut worker_addrs = Vec::new();
         let mut workers = Vec::new();
 
