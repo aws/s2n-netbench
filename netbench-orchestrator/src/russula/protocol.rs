@@ -60,11 +60,11 @@ pub(crate) use notify_peer;
 pub trait Protocol: Clone {
     type State: StateApi;
 
-    // Protocol specific connect behavior.
+    // Protocol specific pairing behavior.
     //
-    // Worker should connect to Coordinators. Coordinators should accept connections
-    // from Workers.
-    async fn connect(&self, addr: &SocketAddr) -> RussulaResult<TcpStream>;
+    // Coordinators should connect to Workers. Workers should accept connections
+    // from Coordinators.
+    async fn pair_peer(&self, addr: &SocketAddr) -> RussulaResult<TcpStream>;
 
     // Run operations for the current state.
     async fn run(&mut self, stream: &TcpStream) -> RussulaResult<Option<Msg>>;
