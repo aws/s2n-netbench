@@ -80,3 +80,31 @@ impl Protocol for CoordProtocol {
     fn worker_running_state(&self) -> Self::State {
         CoordState::WorkersRunning
     }
+    fn event_recorder(&mut self) -> &mut EventRecorder {
+        &mut self.event_recorder
+    }
+}
+
+impl StateApi for CoordState {
+    fn transition_step(&self) -> TransitionStep {
+        match self {
+            CoordState::CheckWorker => TransitionStep::AwaitNext(WorkerState::Ready.as_bytes()),
+            CoordState::Ready => TransitionStep::UserDriven,
+            CoordState::RunWorker => TransitionStep::AwaitNext(WorkerState::Running(0).as_bytes()),
+            CoordState::WorkersRunning => {
+                TransitionStep::AwaitNext(WorkerState::Stopped.as_bytes())
+            }
+            CoordState::Done => TransitionStep::Finished,
+        }
+    }
+
+    fn next_state(&self) -> Self {
+        match self {
+            CoordState::CheckWorker => CoordState::Ready,
+            CoordState::Ready => CoordState::RunWorker,
+            CoordState::RunWorker => CoordState::WorkersRunning,
+            CoordState::WorkersRunning => CoordState::Done,
+            CoordState::Done => CoordState::Done,
+        }
+    }
+}

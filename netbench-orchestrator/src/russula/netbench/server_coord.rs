@@ -89,3 +89,30 @@ impl Protocol for CoordProtocol {
     }
 }
 
+impl StateApi for CoordState {
+    fn transition_step(&self) -> TransitionStep {
+        match self {
+            CoordState::CheckWorker => TransitionStep::AwaitNext(WorkerState::Ready.as_bytes()),
+            CoordState::Ready => TransitionStep::UserDriven,
+            CoordState::RunWorker => {
+                TransitionStep::AwaitNext(WorkerState::RunningAwaitKill(0).as_bytes())
+            }
+            CoordState::WorkersRunning => TransitionStep::UserDriven,
+            CoordState::KillWorker => TransitionStep::AwaitNext(WorkerState::Stopped.as_bytes()),
+            CoordState::WorkerKilled => TransitionStep::UserDriven,
+            CoordState::Done => TransitionStep::Finished,
+        }
+    }
+
+    fn next_state(&self) -> Self {
+        match self {
+            CoordState::CheckWorker => CoordState::Ready,
+            CoordState::Ready => CoordState::RunWorker,
+            CoordState::RunWorker => CoordState::WorkersRunning,
+            CoordState::WorkersRunning => CoordState::KillWorker,
+            CoordState::KillWorker => CoordState::WorkerKilled,
+            CoordState::WorkerKilled => CoordState::Done,
+            CoordState::Done => CoordState::Done,
+        }
+    }
+}

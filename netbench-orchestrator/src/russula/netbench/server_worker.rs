@@ -96,3 +96,38 @@ impl Protocol for WorkerProtocol {
         unimplemented!("Should only be called by Coordinators")
     }
 
+
+    fn event_recorder(&mut self) -> &mut EventRecorder {
+        &mut self.event_recorder
+    }
+}
+
+impl StateApi for WorkerState {
+    fn transition_step(&self) -> TransitionStep {
+        match self {
+            WorkerState::WaitCoordInit => {
+                TransitionStep::AwaitNext(CoordState::CheckWorker.as_bytes())
+            }
+            WorkerState::Ready => TransitionStep::AwaitNext(CoordState::RunWorker.as_bytes()),
+            WorkerState::Run => TransitionStep::SelfDriven,
+            WorkerState::RunningAwaitKill(_) => {
+                TransitionStep::AwaitNext(CoordState::KillWorker.as_bytes())
+            }
+            WorkerState::Killing(_) => TransitionStep::SelfDriven,
+            WorkerState::Stopped => TransitionStep::AwaitNext(CoordState::Done.as_bytes()),
+            WorkerState::Done => TransitionStep::Finished,
+        }
+    }
+
+    fn next_state(&self) -> Self {
+        match self {
+            WorkerState::WaitCoordInit => WorkerState::Ready,
+            WorkerState::Ready => WorkerState::Run,
+            WorkerState::Run => WorkerState::RunningAwaitKill(PLACEHOLDER_PID),
+            WorkerState::RunningAwaitKill(pid) => WorkerState::Killing(*pid),
+            WorkerState::Killing(_) => WorkerState::Stopped,
+            WorkerState::Stopped => WorkerState::Done,
+            WorkerState::Done => WorkerState::Done,
+        }
+    }
+}
