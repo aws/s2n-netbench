@@ -19,6 +19,29 @@ use tracing::{debug, info};
 // Send the Done status multiple times to the peer incase there is packet loss.
 const NOTIFY_DONE_TIMEOUT: Duration = Duration::from_secs(1);
 
+macro_rules! state_api {
+{
+    $(#[$meta:meta])*
+    $state:ident
+} => {paste!{
+
+    $(#[$meta])*
+    fn [<$state _state>](&self) -> Self::State;
+
+    $(#[$meta])*
+    /// Check if the Instance is at the desired state
+    fn [<is_ $state _state>](&self) -> bool {
+        let state = self.[<$state _state>]();
+        self.state().eq(&state)
+    }
+
+    $(#[$meta])*
+    async fn [<poll_ $state>](&mut self, stream: &TcpStream) -> RussulaResult<Poll<()>> {
+        self.poll_state(stream, &self.[<$state _state>]()).await
+    }
+}};
+}
+
 macro_rules! notify_peer {
 {$protocol:ident, $stream:ident} => {
     use crate::russula::network_utils;
@@ -34,6 +57,7 @@ macro_rules! notify_peer {
 }
 pub(crate) use notify_peer;
 
+pub trait Protocol: Clone {
     type State: StateApi;
 
     // Protocol specific connect behavior.
@@ -58,6 +82,61 @@ pub(crate) use notify_peer;
     // Track the peers state; used for debugging.
     fn update_peer_state(&mut self, msg: Msg) -> RussulaResult<()>;
 
+    state_api!(ready);
+    state_api!(done);
+    state_api!(
+        /// Should only be called by Coordinators
+        worker_running
+    );
+
+    // Attempt to make progress until we reach the desired state
+    async fn poll_state(
+        &mut self,
+        stream: &TcpStream,
+        desired_state: &Self::State,
+    ) -> RussulaResult<Poll<()>> {
+        if !self.state().eq(desired_state) {
+            let initial_state = self.state().as_bytes();
+            self.run_current(stream).await?;
+
+            debug!(
+                "{} poll_state--------{:?} -> {:?}",
+                self.name(),
+                initial_state,
+                self.state()
+            );
+        }
+
+        // Notify the peer that we have reached a terminal state
+        //
+        // The Done state is special and only notifies the peer of our Done status.
+        if self.is_done_state() {
+            tracing::info!("{}", self.event_recorder());
+
+            // Notify 3 time in case of packet loss.. this is best effort
+            for _i in 0..3 {
+                match self.run_current(stream).await {
+                    Ok(_) => (),
+                    // We notify the peer of the Done state multiple times. Since the peer could
+                    // have killed the connection in the meantime, its better to ignore network
+                    // failures
+                    Err(RussulaError::NetworkConnectionRefused { dbg: _ })
+                    | Err(RussulaError::NetworkBlocked { dbg: _ })
+                    | Err(RussulaError::NetworkFail { dbg: _ }) => {
+                        debug!("Ignore network failure since coordination is Done.")
+                    }
+                    Err(err) => return Err(err),
+                }
+                tokio::time::sleep(NOTIFY_DONE_TIMEOUT).await;
+            }
+        }
+
+        if self.state().eq(desired_state) {
+            Ok(Poll::Ready(()))
+        } else {
+            Ok(Poll::Pending)
+        }
+    }
 
     // Run operations for the current state
     async fn run_current(&mut self, stream: &TcpStream) -> RussulaResult<()> {
