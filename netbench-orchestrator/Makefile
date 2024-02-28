@@ -1,18 +1,18 @@
-# -------------------- bin orchestrator
-run_orchestrator:
-	RUST_LOG=none,orchestrator::russula=info,orchestrator=debug cargo run --bin orchestrator -- \
-					 --cdk-config-file cdk_config.json \
-					 --client-az us-west-2a \
-					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
-					 --server-placement cluster,cluster,cluster,unspecified,cluster \
-					 --netbench-scenario-file scripts/request_response_multi_5_incast_1GB_req_resp.json \
-					 # --server-az us-west-2b,us-west-2a \
-					 # --netbench-scenario-file scripts/request_response_multi_2_incast_1GB_req_resp.json \
-					 # --netbench-scenario-file scripts/request_response_multi_20_incast_1GB_req_resp.json
-					 # --netbench-scenario-file scripts/request_response_multi_20_incast_3GB_req_resp.json
-					 # --netbench-scenario-file scripts/request_response_multi_10_incast_1GB_req_resp.json
-					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
-					 # --placement partition \
+# # -------------------- bin orchestrator
+# run_orchestrator:
+# 	RUST_LOG=none,orchestrator::russula=info,orchestrator=debug cargo run --bin orchestrator -- \
+# 					 --cdk-config-file cdk_config.json \
+# 					 --client-az us-west-2a \
+# 					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
+# 					 --server-placement cluster,cluster,cluster,unspecified,cluster \
+# 					 --netbench-scenario-file scripts/request_response_multi_5_incast_1GB_req_resp.json \
+# 					 # --server-az us-west-2b,us-west-2a \
+# 					 # --netbench-scenario-file scripts/request_response_multi_2_incast_1GB_req_resp.json \
+# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_1GB_req_resp.json
+# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_3GB_req_resp.json
+# 					 # --netbench-scenario-file scripts/request_response_multi_10_incast_1GB_req_resp.json
+# 					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
+# 					 # --placement partition \
 
 # -------------------- test russula_cli with netbench
 net_server_coord:
@@ -29,7 +29,7 @@ net_server_worker1:
 					 --russula-port 7000 \
 					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario scripts/request_response_multi_2_incast_1GB_req_resp.json \
+					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
 					 --netbench-port 7001 \
 
 net_server_worker2:
@@ -39,7 +39,7 @@ net_server_worker2:
 					 --russula-port 8000 \
 					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario scripts/request_response_multi_2_incast_1GB_req_resp.json \
+					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
 					 --netbench-port 8001 \
 
 # -------------------- test russula_cli with sim process (scripts/sim_netbench_*.sh)

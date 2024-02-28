@@ -124,9 +124,9 @@ impl Protocol for WorkerProtocol {
                         debug!("netbench_port: {}", self.netbench_ctx.netbench_port);
 
                         let mut cmd = Command::new(collector);
-                        cmd.env("PORT", self.netbench_ctx.netbench_port.to_string());
                         cmd.args([&driver, "--scenario", &scenario])
                             .stdout(output_log_file);
+                        cmd.env("PORT", self.netbench_ctx.netbench_port.to_string());
                         println!("{:?}", cmd);
                         debug!("{:?}", cmd);
                         cmd.spawn()
