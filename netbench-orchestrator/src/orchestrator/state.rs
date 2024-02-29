@@ -54,3 +54,24 @@ pub struct State {
     pub ami_name: &'static str,
     pub ssh_key_name: Option<&'static str>,
 }
+
+impl State {
+    // All executables should be placed in the bin path.
+    //
+    // Since drivers and executables can be installed from multiple sources (Github, Source,
+    // rustup), we link all executables from a common bin folder. This makes executable
+    // discovery trivial and also helps with debugging.
+    pub fn host_bin_path(&self) -> String {
+        format!("{}/bin", self.host_home_path)
+    }
+
+    pub fn cargo_path(&self) -> String {
+        format!("{}/bin/cargo", self.host_home_path)
+    }
+
+    // Create a security group with the following name prefix. Use with `sg_name_with_id`
+    // security_group_name_prefix: "netbench_runner",
+    pub fn security_group_name(&self, unique_id: &str) -> String {
+        format!("netbench_{}", unique_id)
+    }
+}

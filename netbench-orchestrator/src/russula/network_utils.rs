@@ -3,9 +3,10 @@
 
 use crate::russula::{RussulaError, RussulaResult};
 use bytes::Bytes;
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt;
-use tokio::net::TcpStream;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
 use tracing::error;
 
 // Msg.len is represented as a u16

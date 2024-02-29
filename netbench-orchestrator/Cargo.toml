@@ -18,6 +18,7 @@ path = "src/russula_cli.rs"
 
 [dependencies]
 aws-sdk-s3 = "1.17"
+aws-sdk-ssm = "1.17"
 tokio = { version = "1.26.0", features = ["full"] }
 structopt = { version = "0.3.26", default-features = false }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
@@ -30,6 +31,7 @@ tracing = "0.1.40"
 tracing-appender = "0.2"
 uuid = { version = "1", features = ["v4"] }
 paste = "1.0.14"
+indicatif = "0.17.8"
 
 [dev-dependencies]
 futures = "0.3"

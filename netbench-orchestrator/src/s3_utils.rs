@@ -1,8 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::orchestrator::OrchError;
-use crate::OrchResult;
+use crate::{orchestrator::OrchError, OrchResult};
 use aws_sdk_s3 as s3;
 use aws_sdk_s3::operation::{get_object::GetObjectOutput, put_object::PutObjectOutput};
 use std::{fs::File, io::prelude::*, path::Path};

@@ -15,8 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::File, net::SocketAddr, process::Command};
 use sysinfo::{Pid, PidExt, ProcessExt, SystemExt};
 use tokio::net::{TcpListener, TcpStream};
-use tracing::error;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 // Only used when creating a state variant for comparison
 const PLACEHOLDER_PID: u32 = 1000;
