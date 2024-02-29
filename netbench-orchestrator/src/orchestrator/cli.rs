@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::orchestrator::{
-    cli::types::{CdkConfig, CliInfraScenario, HostConfig, IntermediateCli, NetbenchScenario},
+    cli::types::{CdkConfig, CliInfraScenario, IntermediateCli, NetbenchScenario},
     OrchResult,
 };
 use clap::Parser;
 use std::path::PathBuf;
 
 mod types;
+
+pub use types::HostConfig;
 
 #[derive(Parser, Debug)]
 pub struct Cli {
