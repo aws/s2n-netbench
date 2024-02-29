@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::ServerContext;
-use crate::russula::states::StateApi;
-use crate::russula::states::TransitionStep;
 use crate::russula::{
     error::{RussulaError, RussulaResult},
     event::EventRecorder,
     netbench::server_coord::CoordState,
     network_utils::Msg,
+    states::{StateApi, TransitionStep},
     workflow::WorkflowTrait,
 };
 use core::fmt::Debug;

@@ -8,10 +8,12 @@ check-filename = true
 [files]
 extend-exclude = [
     "request_response.json",
+    "response.json",
+    "bad_response.json",
+    "cdk_config.json",
     "*.snap",
     "*.bin",
     "*.der",
     "*.ico",
     "*.pem",
-    "*.json"
 ]
