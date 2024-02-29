@@ -17,21 +17,26 @@ name = "russula_cli"
 path = "src/russula_cli.rs"
 
 [dependencies]
+aws-types = "1.1"
+aws-config = "1.1"
+aws-sdk-ec2 = { version = "1.22", features = [] }
 aws-sdk-s3 = "1.17"
+aws-sdk-iam = "1.15"
 aws-sdk-ssm = "1.17"
-tokio = { version = "1.26.0", features = ["full"] }
-structopt = { version = "0.3.26", default-features = false }
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-bytes = "1.4.0"
-humantime = "2.1.0"
-sysinfo = "0.29.10"
-serde = { version = "1", features = ["derive", "rc"] }
-serde_json = "1"
-tracing = "0.1.40"
-tracing-appender = "0.2"
-uuid = { version = "1", features = ["v4"] }
+bytes = "1.4"
+clap = { version = "4.5", features = ["derive"] }
+humantime = "2.1"
+indicatif = "0.17"
 paste = "1.0.14"
-indicatif = "0.17.8"
+structopt = { version = "0.3", default-features = false }
+sysinfo = "0.29"
+serde = { version = "1", features = ["derive", "rc"] }
+tokio = { version = "1.26", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
 futures = "0.3"
