@@ -15,6 +15,8 @@ pub enum OrchError {
     Ssm { dbg: String },
     // S3 sdk error
     S3 { dbg: String },
+    // Russula error
+    Russula { dbg: String },
 }
 
 impl std::fmt::Display for OrchError {
@@ -25,6 +27,7 @@ impl std::fmt::Display for OrchError {
             OrchError::Iam { dbg } => write!(f, "{}", dbg),
             OrchError::Ssm { dbg } => write!(f, "{}", dbg),
             OrchError::S3 { dbg } => write!(f, "{}", dbg),
+            OrchError::Russula { dbg } => write!(f, "{}", dbg),
         }
     }
 }

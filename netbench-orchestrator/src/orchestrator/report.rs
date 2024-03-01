@@ -6,7 +6,7 @@ use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use std::{path::Path, process::Command};
 use tracing::{debug, info, trace};
 
-pub async fn orch_generate_report(
+pub async fn generate_report(
     s3_client: &aws_sdk_s3::Client,
     unique_id: &str,
     infra: &InfraDetail,

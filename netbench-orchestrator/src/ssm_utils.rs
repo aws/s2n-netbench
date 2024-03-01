@@ -11,8 +11,12 @@ use tracing::trace;
 
 pub mod client;
 pub mod common;
-mod netbench_driver;
+mod coordination_utils;
+pub mod netbench_driver;
 pub mod server;
+
+pub use coordination_utils::{ClientNetbenchRussula, ServerNetbenchRussula};
+pub use netbench_driver::*;
 
 // Group of SSM commands
 //

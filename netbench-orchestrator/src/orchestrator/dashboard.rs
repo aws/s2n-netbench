@@ -2,35 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    ec2_utils::{EndpointType, InstanceDetail},
-    orchestrator::{OrchResult, OrchestratorConfig},
+    ec2_utils::EndpointType,
+    orchestrator::{InfraDetail, OrchResult, OrchestratorConfig},
     s3_utils::upload_object,
 };
 use aws_sdk_s3::primitives::ByteStream;
 use bytes::Bytes;
 use tracing::info;
 
-pub enum Step<'a> {
-    UploadIndex,
-    HostsRunning(&'a Vec<InstanceDetail>),
-}
-
-pub async fn update_dashboard(
-    step: Step<'_>,
-    s3_client: &aws_sdk_s3::Client,
-    unique_id: &str,
-    config: &OrchestratorConfig,
-    endpoint_type: EndpointType,
-) -> OrchResult<()> {
-    match step {
-        Step::UploadIndex => upload_index_html(s3_client, unique_id, config).await,
-        Step::HostsRunning(instances) => {
-            update_instance_running(s3_client, instances, unique_id, config, endpoint_type).await
-        }
-    }
-}
-
-async fn upload_index_html(
+pub async fn upload_index_html(
     s3_client: &aws_sdk_s3::Client,
     unique_id: &str,
     config: &OrchestratorConfig,
@@ -63,13 +43,18 @@ async fn upload_index_html(
     Ok(())
 }
 
-async fn update_instance_running(
+pub async fn update_instance_running(
     s3_client: &aws_sdk_s3::Client,
-    instances: &[InstanceDetail],
+    infra: &InfraDetail,
     unique_id: &str,
     config: &OrchestratorConfig,
     endpoint_type: EndpointType,
 ) -> OrchResult<()> {
+    let instances = match endpoint_type {
+        EndpointType::Server => &infra.servers,
+        EndpointType::Client => &infra.clients,
+    };
+
     let instance_detail = instances
         .iter()
         .map(|instance| format!("{} {}", instance.host_ips(), instance.instance_id()))

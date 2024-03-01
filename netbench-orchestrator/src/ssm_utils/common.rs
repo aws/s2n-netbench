@@ -232,7 +232,7 @@ pub async fn upload_netbench_data_to_s3(
     let s3_command = format!(
         "aws s3 cp *{driver_name}.json {}/results/{}/{driver_name}/",
         config.s3_path(unique_id),
-        config.netbench_scenario_file_stem()
+        config.netbench_scenario_filepath_stem()
     );
     let cmd = vec!["cd netbench_orchestrator".to_string(), s3_command];
 

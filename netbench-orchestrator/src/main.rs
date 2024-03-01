@@ -3,7 +3,7 @@
 
 // TODO remove
 #![allow(dead_code)]
-use crate::orchestrator::{OrchResult, RunMode, STATE};
+use crate::orchestrator::{OrchError, OrchResult, RunMode, STATE};
 use aws_config::BehaviorVersion;
 use aws_types::region::Region;
 use clap::Parser;
@@ -11,6 +11,7 @@ use tracing_subscriber::EnvFilter;
 
 mod ec2_utils;
 mod orchestrator;
+mod russula;
 mod s3_utils;
 mod ssm_utils;
 

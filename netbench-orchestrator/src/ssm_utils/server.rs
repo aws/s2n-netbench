@@ -5,6 +5,7 @@ use super::{send_command, Step};
 use crate::{
     orchestrator::{OrchestratorConfig, STATE},
     ssm_utils::netbench_driver::NetbenchDriverType,
+    OrchError, OrchResult,
 };
 use aws_sdk_ssm::operation::send_command::SendCommandOutput;
 use tracing::debug;
@@ -14,7 +15,7 @@ pub async fn run_russula_worker(
     instance_ids: Vec<String>,
     driver: &NetbenchDriverType,
     config: &OrchestratorConfig,
-) -> SendCommandOutput {
+) -> OrchResult<SendCommandOutput> {
     let netbench_cmd =
         format!("env RUST_LOG=debug ./target/release/russula_cli netbench-server-worker --russula-port {} --driver {} --scenario {} --netbench-port {}",
             STATE.russula_port, driver.driver_name(), config.netbench_scenario_filename(), STATE.netbench_port);
@@ -33,5 +34,7 @@ pub async fn run_russula_worker(
         config,
     )
     .await
-    .expect("Timed out")
+    .ok_or(OrchError::Ssm {
+        dbg: "failed to start russula worker".to_string(),
+    })
 }
