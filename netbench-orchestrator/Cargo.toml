@@ -26,6 +26,7 @@ aws-sdk-ssm = "1"
 bytes = "1"
 clap = { version = "4", features = ["derive"] }
 humantime = "2"
+indicatif = "0.17"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 structopt = { version = "0.3", default-features = false }
@@ -34,8 +35,8 @@ tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
+tempfile = "3"
 uuid = { version = "1", features = ["v4"] }
-indicatif = "0.17"
 
 [dev-dependencies]
 futures = "0.3"

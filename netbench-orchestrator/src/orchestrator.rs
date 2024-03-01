@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 mod cli;
+mod dashboard;
 mod error;
+mod report;
 mod state;
 
 pub use cli::{Cli, HostConfig, OrchestratorConfig};

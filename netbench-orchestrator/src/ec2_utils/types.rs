@@ -59,6 +59,10 @@ impl InstanceDetail {
     pub fn host_ips(&self) -> &HostIps {
         &self.host_ips
     }
+
+    pub fn endpoint_type(&self) -> &EndpointType {
+        &self.endpoint_type
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]

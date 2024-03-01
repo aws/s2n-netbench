@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    ec2_utils::types::{InstanceDetail, PubIp},
+    ec2_utils::types::PubIp,
     orchestrator::{OrchError, OrchResult},
 };
 use aws_sdk_ec2::{error::SdkError, types::PlacementGroup};
@@ -14,7 +14,7 @@ mod launch_plan;
 mod networking;
 mod types;
 
-pub use types::{Az, PrivIp};
+pub use types::{Az, EndpointType, InstanceDetail, PrivIp};
 
 const MAX_RETRY_COUNT: usize = 25;
 const RETRY_BACKOFF: Duration = Duration::from_secs(5);

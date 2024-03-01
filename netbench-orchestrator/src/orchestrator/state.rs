@@ -25,8 +25,11 @@ pub const STATE: State = State {
 
     // aws
     ami_name: "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
+
+    // Configure hosts with an ec2 key pair to enable ssh access.
+    //
     // https://github.com/aws/s2n-netbench/issues/35
-    // set a key pair to access the ec2 hosts
+    // TODO take as input from user
     ssh_key_name: None,
 };
 
