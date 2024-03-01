@@ -349,15 +349,15 @@ impl CdkConfig {
         &self.resources.output_netbench_runner_log_group
     }
 
-    fn netbench_runner_instance_profile(&self) -> &String {
+    pub fn netbench_runner_instance_profile(&self) -> &String {
         &self.resources.output_netbench_runner_instance_profile
     }
 
-    fn netbench_runner_subnet_tag_key(&self) -> String {
+    pub fn netbench_runner_subnet_tag_key(&self) -> String {
         format!("tag:{}", self.resources.output_netbench_subnet_tag_key)
     }
 
-    fn netbench_runner_subnet_tag_value(&self) -> &String {
+    pub fn netbench_runner_subnet_tag_value(&self) -> &String {
         &self.resources.output_netbench_subnet_tag_value
     }
 

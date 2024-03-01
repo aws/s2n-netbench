@@ -5,7 +5,7 @@ mod cli;
 mod error;
 mod state;
 
-pub use cli::{Cli, OrchestratorConfig};
+pub use cli::{Cli, HostConfig, OrchestratorConfig};
 pub use error::{OrchError, OrchResult};
 pub use state::STATE;
 
