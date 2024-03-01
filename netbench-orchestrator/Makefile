@@ -1,18 +1,17 @@
 # -------------------- bin orchestrator
-# run_orchestrator:
-# 	RUST_LOG=none,orchestrator::russula=info,orchestrator=debug cargo run --bin orchestrator -- \
-# 					 --cdk-config-file cdk_config.json \
-# 					 --client-az us-west-2a \
-# 					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
-# 					 --server-placement cluster,cluster,cluster,unspecified,cluster \
-# 					 --netbench-scenario-file scripts/request_response_multi_5_incast_1GB_req_resp.json \
-# 					 # --server-az us-west-2b,us-west-2a \
-# 					 # --netbench-scenario-file scripts/request_response_multi_2_incast_1GB_req_resp.json \
-# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_1GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_3GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_10_incast_1GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
-# 					 # --placement partition \
+# Generate incast scenario (s2n-netbench root project dir). The server/client counts must
+# match the generated netbench scenario. In the following example we run an incast
+# scenario: 5 servers, 1 client.
+#
+# `./target/release/s2n-netbench-scenarios --request_response.servers 5 --request_response.response_size 2GB --request_response.request_size 25B`
+#
+run_orchestrator:
+	RUST_LOG=none,s2n_netbench_orchestrator::russula=info,s2n_netbench_orchestrator=debug cargo run --bin s2n-netbench-orchestrator -- \
+					 --cdk-config-file cdk_config.json \
+					 --client-az us-west-2a \
+					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
+					 --server-placement cluster,cluster,cluster,unspecified,cluster \
+					 --netbench-scenario-file ../target/s2n-netbench/request_response.json \
 
 # -------------------- test russula_cli with real netbench
 #  The following scripts simulate a netbench incast test using 2 servers and 1 client.

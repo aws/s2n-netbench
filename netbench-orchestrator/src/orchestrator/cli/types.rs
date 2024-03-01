@@ -308,45 +308,6 @@ struct CdkResources {
     output_netbench_infra_primary_prod_region: String,
 }
 
-impl OrchestratorConfig {
-    pub fn netbench_scenario_filename(&self) -> &str {
-        &self.netbench_scenario_filename
-    }
-
-    pub fn netbench_scenario_file_stem(&self) -> &str {
-        self.netbench_scenario_filepath
-            .as_path()
-            .file_stem()
-            .expect("expect scenario file")
-            .to_str()
-            .unwrap()
-    }
-
-    pub fn cf_url(&self, unique_id: &str) -> String {
-        format!(
-            "{}/{}",
-            self.cdk_config.netbench_cloudfront_distribution(),
-            unique_id
-        )
-    }
-
-    pub fn s3_path(&self, unique_id: &str) -> String {
-        format!(
-            "s3://{}/{}",
-            self.cdk_config.netbench_runner_public_s3_bucket(),
-            unique_id
-        )
-    }
-
-    pub fn s3_private_path(&self, unique_id: &str) -> String {
-        format!(
-            "s3://{}/{}",
-            self.cdk_config.netbench_runner_private_s3_bucket(),
-            unique_id
-        )
-    }
-}
-
 impl CdkConfig {
     pub fn netbench_runner_public_s3_bucket(&self) -> &String {
         &self.resources.output_netbench_runner_public_logs_bucket

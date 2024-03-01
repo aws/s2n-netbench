@@ -107,15 +107,14 @@ impl<'a> LaunchPlan<'a> {
         infra: &mut InfraDetail,
         unique_id: &str,
     ) -> OrchResult<()> {
-        let instance_detail: &mut Vec<InstanceDetail> = match endpoint_type {
-            EndpointType::Server => &mut infra.servers,
-            EndpointType::Client => &mut infra.clients,
+        let (instance_detail, host_config) = match endpoint_type {
+            EndpointType::Server => (&mut infra.servers, &self.config.server_config),
+            EndpointType::Client => (&mut infra.clients, &self.config.client_config),
         };
 
-        let mut launch_requests: Vec<OrchResult<_>> =
-            Vec::with_capacity(self.config.server_config.len());
-        for host_config in &self.config.server_config {
-            let server = instance::launch_instances(
+        let mut launch_requests = Vec::with_capacity(host_config.len());
+        for host_config in host_config {
+            let instance = instance::launch_instances(
                 ec2_client,
                 self,
                 &infra.security_group_id,
@@ -129,7 +128,7 @@ impl<'a> LaunchPlan<'a> {
                 debug!("{}", err);
                 err
             });
-            launch_requests.push(server);
+            launch_requests.push(instance);
         }
 
         let launch_request: OrchResult<Vec<_>> = launch_requests.into_iter().collect();

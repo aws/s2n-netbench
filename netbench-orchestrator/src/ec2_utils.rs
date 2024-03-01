@@ -1,10 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    ec2_utils::types::PubIp,
-    orchestrator::{OrchError, OrchResult},
-};
+use crate::orchestrator::{OrchError, OrchResult};
 use aws_sdk_ec2::{error::SdkError, types::PlacementGroup};
 use std::{collections::HashMap, time::Duration};
 use tracing::{debug, error, info};
@@ -14,7 +11,8 @@ mod launch_plan;
 mod networking;
 mod types;
 
-pub use types::{Az, EndpointType, InstanceDetail, PrivIp};
+pub use launch_plan::LaunchPlan;
+pub use types::{Az, EndpointType, InstanceDetail, PrivIp, PubIp};
 
 const MAX_RETRY_COUNT: usize = 25;
 const RETRY_BACKOFF: Duration = Duration::from_secs(5);
@@ -36,6 +34,20 @@ impl InfraDetail {
         self.delete_placement_group(ec2_client).await?;
         self.delete_security_group(ec2_client).await?;
         Ok(())
+    }
+
+    pub fn server_ids(&self) -> Vec<String> {
+        self.servers
+            .iter()
+            .map(|infra_detail| infra_detail.instance_id().to_string())
+            .collect()
+    }
+
+    pub fn client_ids(&self) -> Vec<String> {
+        self.clients
+            .iter()
+            .map(|infra_detail| infra_detail.instance_id().to_string())
+            .collect()
     }
 
     pub fn public_server_ips(&self) -> Vec<&PubIp> {
@@ -63,12 +75,8 @@ impl InfraDetail {
 impl InfraDetail {
     async fn delete_instances(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting instances");
-        let ids: Vec<String> = self
-            .servers
-            .iter()
-            .chain(self.clients.iter())
-            .map(|instance| instance.instance_id().to_string())
-            .collect();
+        let mut ids = self.client_ids();
+        ids.append(&mut self.server_ids());
 
         ec2_client
             .terminate_instances()
