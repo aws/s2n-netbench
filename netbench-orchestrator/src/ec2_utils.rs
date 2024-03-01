@@ -1,51 +1,172 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-use std::net::IpAddr;
+use crate::{
+    ec2_utils::types::{InstanceDetail, PubIp},
+    orchestrator::{OrchError, OrchResult},
+};
+use aws_sdk_ec2::types::PlacementGroup;
+use std::{collections::HashMap, time::Duration};
+use tracing::{debug, error, info};
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct PubIp(pub IpAddr);
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub struct PrivIp(pub IpAddr);
+mod instance;
+mod launch_plan;
+mod networking;
+mod types;
 
-impl std::fmt::Display for PrivIp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+pub use types::{Az, PrivIp};
+
+const RETRY_COUNT: usize = 25;
+const RETRY_BACKOFF: Duration = Duration::from_secs(5);
+
+#[derive(Debug)]
+pub struct InfraDetail {
+    pub security_group_id: String,
+    pub clients: Vec<InstanceDetail>,
+    pub servers: Vec<InstanceDetail>,
+    placement_map: HashMap<Az, PlacementGroup>,
+}
+
+impl InfraDetail {
+    pub async fn cleanup(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
+        self.delete_instances(ec2_client).await?;
+        self.delete_placement_group(ec2_client).await?;
+        // generally takes a long time so attempt this last
+        self.delete_security_group(ec2_client).await?;
+        Ok(())
+    }
+
+    pub fn public_server_ips(&self) -> Vec<&PubIp> {
+        self.servers
+            .iter()
+            .map(|instance| instance.host_ips().public_ip())
+            .collect()
+    }
+
+    pub fn private_server_ips(&self) -> Vec<&PrivIp> {
+        self.servers
+            .iter()
+            .map(|instance| instance.host_ips().private_ip())
+            .collect()
+    }
+
+    pub fn public_client_ips(&self) -> Vec<&PubIp> {
+        self.clients
+            .iter()
+            .map(|instance| instance.host_ips().public_ip())
+            .collect()
     }
 }
 
-impl std::fmt::Display for PubIp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+impl InfraDetail {
+    async fn delete_instances(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
+        info!("Start: deleting instances");
+        println!("Start: deleting instances");
+        let ids: Vec<String> = self
+            .servers
+            .iter()
+            .chain(self.clients.iter())
+            .map(|instance| instance.instance_id().to_string())
+            .collect();
+
+        instance::delete_instances(ec2_client, ids).await?;
+        Ok(())
+    }
+
+    async fn delete_security_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
+        info!("Start: deleting security groups");
+        println!("Start: deleting security groups");
+
+        let mut deleted_sec_group = ec2_client
+            .delete_security_group()
+            .group_id(self.security_group_id.to_string())
+            .send()
+            .await;
+
+        let mut retries = RETRY_COUNT;
+        while deleted_sec_group.is_err() && retries > 0 {
+            debug!("deleting security group. retry {retries}");
+            tokio::time::sleep(RETRY_BACKOFF).await;
+            deleted_sec_group = ec2_client
+                .delete_security_group()
+                .group_id(self.security_group_id.to_string())
+                .send()
+                .await;
+
+            retries -= 1;
+        }
+
+        deleted_sec_group.map_err(|err| {
+            error!("abort deleting security group {}", self.security_group_id);
+            OrchError::Ec2 {
+                dbg: err.to_string(),
+            }
+        })?;
+
+        Ok(())
+    }
+
+    async fn delete_placement_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
+        info!("Start: deleting placement groups");
+        println!("Start: deleting placement groups");
+
+        for (_az, placement_group) in self.placement_map.iter() {
+            let mut retries = RETRY_COUNT;
+
+            let placement_group_name = placement_group.group_name().ok_or(OrchError::Ec2 {
+                dbg: "Failed to get placement_group name".to_string(),
+            })?;
+            debug!("Start: deleting placement group: {placement_group_name}");
+
+            let mut delete_placement_group = ec2_client
+                .delete_placement_group()
+                .group_name(placement_group_name)
+                .send()
+                .await;
+
+            while delete_placement_group.is_err() && retries > 0 {
+                debug!("deleting placement group. retry {retries}");
+                tokio::time::sleep(RETRY_BACKOFF).await;
+                delete_placement_group = ec2_client
+                    .delete_placement_group()
+                    .group_name(placement_group_name)
+                    .send()
+                    .await;
+
+                retries -= 1;
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn delete_with_retry<F: Fn(&aws_sdk_ec2::Client) -> OrchResult<()>>(
+        &self,
+        ec2_client: &aws_sdk_ec2::Client,
+        f: F,
+    ) -> OrchResult<()> {
+        info!("Start: deleting placement groups");
+        println!("Start: deleting placement groups");
+
+        for (_az, placement_group) in self.placement_map.iter() {
+            let mut retries = RETRY_COUNT;
+
+            let placement_group_name = placement_group.group_name().ok_or(OrchError::Ec2 {
+                dbg: "Failed to get placement_group name".to_string(),
+            })?;
+            debug!("Start: deleting placement group: {placement_group_name}");
+
+            let mut opt = f(ec2_client);
+
+            while opt.is_err() && retries > 0 {
+                debug!("deleting placement group. retry {retries}");
+                tokio::time::sleep(RETRY_BACKOFF).await;
+                opt = f(ec2_client);
+
+                retries -= 1;
+            }
+        }
+
+        Ok(())
     }
 }
-
-macro_rules! ec2_new_types {
-    ($name:ident) => {
-        #[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-        pub struct $name(String);
-
-        impl $name {
-            pub fn into_string(self) -> String {
-                self.clone().0
-            }
-        }
-
-        impl From<String> for $name {
-            fn from(value: String) -> Self {
-                $name(value)
-            }
-        }
-
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}: {}", std::any::type_name::<$name>(), self.0)?;
-                Ok(())
-            }
-        }
-    };
-}
-
-ec2_new_types!(SubnetId);
-ec2_new_types!(VpcId);
-ec2_new_types!(Az);
