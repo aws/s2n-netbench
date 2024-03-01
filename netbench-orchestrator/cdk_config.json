@@ -1,0 +1,12 @@
+{
+  "NetbenchInfraPrimaryProd": {
+    "outputNetbenchRunnerLogGroup": "NetbenchInfraPrimaryProd-NetbenchRunnerLogGroup2B821E01-yfykCkGeMuS4",
+    "outputNetbenchCloudfrontDistribution": "https://d37mm99fcr6hy4.cloudfront.net",
+    "outputNetbenchInfraPrimaryProdRegion": "us-west-2",
+    "outputNetbenchRunnerPrivateSrcBucket": "netbenchrunner-private-source-prod",
+    "outputNetbenchRunnerPublicLogsBucket": "netbenchrunnerlogs-public-prod",
+    "outputNetbenchSubnetTagValue": "public-subnet-for-netbench-runners",
+    "outputNetbenchSubnetTagKey": "aws-cdk:netbench-subnet-name",
+    "outputNetbenchRunnerInstanceProfile": "NetbenchInfraPrimaryProd-instanceProfile9C1E1CDD-kVoSXbmUxoBA"
+  }
+}
