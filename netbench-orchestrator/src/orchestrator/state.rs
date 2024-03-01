@@ -25,8 +25,10 @@ pub const STATE: State = State {
 
     // aws
     ami_name: "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
+
     // TODO take as input from user
-    // set a key pair to access the ec2 hosts
+    // Configure hosts with an ec2 key pair to enable ssh access. This is
+    // use for downloading logs from the remote host post a netbench run.
     ssh_key_name: None,
 };
 
