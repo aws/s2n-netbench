@@ -18,3 +18,11 @@ bytes = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+structopt = { version = "0.3", default-features = false }
+humantime = "2"
+sysinfo = "0.29"
+paste = "1"
+
+[dev-dependencies]
+futures = "0.3"
