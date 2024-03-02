@@ -1,18 +1,18 @@
 # # -------------------- bin orchestrator
-# run_orchestrator:
-# 	RUST_LOG=none,orchestrator::russula=info,orchestrator=debug cargo run --bin orchestrator -- \
-# 					 --cdk-config-file cdk_config.json \
-# 					 --client-az us-west-2a \
-# 					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
-# 					 --server-placement cluster,cluster,cluster,unspecified,cluster \
-# 					 --netbench-scenario-file scripts/request_response_multi_5_incast_1GB_req_resp.json \
-# 					 # --server-az us-west-2b,us-west-2a \
-# 					 # --netbench-scenario-file scripts/request_response_multi_2_incast_1GB_req_resp.json \
-# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_1GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_20_incast_3GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_10_incast_1GB_req_resp.json
-# 					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
-# 					 # --placement partition \
+run_orchestrator:
+	RUST_LOG=none,orchestrator::russula=info,orchestrator=debug cargo run --bin s2n-netbench-orchestrator -- \
+					 --cdk-config-file cdk_config.json \
+					 --client-az us-west-2a \
+					 --server-az us-west-2b,us-west-2b,us-west-2a,us-west-2a,us-west-2a \
+					 --server-placement cluster,cluster,cluster,unspecified,cluster \
+					 --netbench-scenario-file scripts/request_response_multi_5_incast_1GB_req_resp.json \
+					 # --server-az us-west-2b,us-west-2a \
+					 # --netbench-scenario-file scripts/request_response_multi_2_incast_1GB_req_resp.json \
+					 # --netbench-scenario-file scripts/request_response_multi_20_incast_1GB_req_resp.json
+					 # --netbench-scenario-file scripts/request_response_multi_20_incast_3GB_req_resp.json
+					 # --netbench-scenario-file scripts/request_response_multi_10_incast_1GB_req_resp.json
+					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
+					 # --placement partition \
 
 # -------------------- test russula_cli with netbench. use with scripts/net_client.sh
 net_server_coord:

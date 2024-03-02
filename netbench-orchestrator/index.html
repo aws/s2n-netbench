@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Netbench Runner Status Page</title>
+    <!-- Bootstrap CSS https://getbootstrap.com/docs/3.4/getting-started/ -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+  </head>
+  <body onload="load()">
+    <main class="container" role="main">
+        <h1>Netbench Runner Status Page: template_unique_id</h1>
+        <h2>Finished: <span id="finished-0">Not Yet...</span></h2>
+        <p>
+            This is the landing page for your Netbench Run.
+            The current status for the server and client are shown below.
+        </p>
+        <h2>Servers</h2>
+        <ul>
+            <li id="server-0">...</li>
+        </ul>
+        <h2>Clients</h2>
+        <ul>
+            <li id="client-0">...</li>
+        </ul>
+
+        <button onclick="updateAll()">Update</button>
+    </main>
+    <script>
+    function httpGetAsync(theUrl, callback)
+    {{
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {{
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                callback(xmlHttp.responseText);
+        }}
+        xmlHttp.open("GET", theUrl, true); // true for asynchronous
+        xmlHttp.send(null);
+    }}
+    function updateElement(id) {{
+        return function (text) {{
+            document.getElementById(id).innerHTML = text;
+        }}
+    }}
+    function update(prefix, id) {{
+        return function (step) {{
+            httpGetAsync(prefix + step, updateElement(id + "-" + step));
+        }};
+    }}
+    function updateAll() {{
+        console.log("Updating All");
+        let update_server_at_step = update("template_server_prefix", "server");
+        for (let i = 0; i < 8; i++) {{
+            update_server_at_step(i);
+        }}
+        let update_client_at_step = update("template_client_prefix", "client");
+        for (let i = 0; i < 8; i++) {{
+            update_client_at_step(i);
+        }}
+        let update_finished = update("template_finished_prefix", "finished")(0);
+    }}
+    function load() {{
+        setInterval(updateAll(), 30000);
+    }}
+    </script>
+  </body>
+</html>
