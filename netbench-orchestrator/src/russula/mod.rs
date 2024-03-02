@@ -9,12 +9,14 @@ use tracing::{error, info};
 
 mod error;
 mod event;
+mod netbench;
 mod network_utils;
 mod protocol;
 mod states;
 
 use error::{RussulaError, RussulaResult};
 use protocol::Protocol;
+use states::{StateApi, TransitionStep};
 
 struct ProtocolInstance<P: Protocol> {
     pub addr: SocketAddr,
@@ -173,5 +175,144 @@ impl<P: Protocol> RussulaBuilder<P> {
             instance_list: stream_protocol_list,
             poll_delay: self.poll_delay,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::russula::netbench::{client, server};
+    use futures::future::join_all;
+    use std::str::FromStr;
+
+    const POLL_DELAY_DURATION: Duration = Duration::from_secs(1);
+
+    #[tokio::test]
+    async fn netbench_server_protocol() {
+        let mut worker_addrs = Vec::new();
+        let mut workers = Vec::new();
+        macro_rules! worker {
+            {$port:literal} => {
+                let sock = SocketAddr::from_str(&format!("127.0.0.1:{}", $port)).unwrap();
+                let worker = tokio::spawn(async move {
+                    let worker = RussulaBuilder::new(
+                        BTreeSet::from_iter([sock]),
+                        server::WorkerProtocol::new(
+                            sock.port().to_string(),
+                            netbench::ServerContext::testing(),
+                        ),
+                        POLL_DELAY_DURATION,
+                    );
+                    let mut worker = worker.build().await.unwrap();
+                    worker
+                        .run_till_done()
+                        .await
+                        .unwrap();
+                    worker
+                });
+
+                workers.push(worker);
+                worker_addrs.push(sock);
+            };
+        }
+
+        worker!(8001);
+        worker!(8002);
+        worker!(8003);
+        worker!(8004);
+        worker!(8005);
+        worker!(8006);
+        worker!(8007);
+
+        let c1 = tokio::spawn(async move {
+            let addr = BTreeSet::from_iter(worker_addrs);
+            let protocol = server::CoordProtocol::new();
+            let coord = RussulaBuilder::new(addr, protocol, POLL_DELAY_DURATION * 2);
+            let mut coord = coord.build().await.unwrap();
+            coord.run_till_ready().await.unwrap();
+            coord
+        });
+        let join = tokio::join!(c1);
+        let mut coord = join.0.unwrap();
+        {
+            coord.run_till_worker_running().await.unwrap();
+            let simulate_run_time = Duration::from_secs(5);
+            tokio::time::sleep(simulate_run_time).await;
+        }
+
+        while coord.poll_done().await.unwrap().is_pending() {
+            println!("poll state: Done");
+        }
+
+        {
+            let worker_join = join_all(workers).await;
+            println!("workers done");
+            for w in worker_join {
+                assert!(w.unwrap().is_done_state());
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn netbench_client_protocol() {
+        let mut worker_addrs = Vec::new();
+        let mut workers = Vec::new();
+
+        macro_rules! worker {
+            {$port:literal} => {
+                let sock = SocketAddr::from_str(&format!("127.0.0.1:{}", $port)).unwrap();
+                let worker = tokio::spawn(async move {
+                    let worker = RussulaBuilder::new(
+                        BTreeSet::from_iter([sock]),
+                        client::WorkerProtocol::new(
+                            sock.port().to_string(),
+                            netbench::ClientContext::testing(),
+                        ),
+                        POLL_DELAY_DURATION,
+                    );
+                    let mut worker = worker.build().await.unwrap();
+                    worker
+                        .run_till_done()
+                        .await
+                        .unwrap();
+                    worker
+                });
+
+                workers.push(worker);
+                worker_addrs.push(sock);
+            };
+        }
+
+        worker!(9001);
+        worker!(9002);
+        worker!(9003);
+        worker!(9004);
+
+        let c1 = tokio::spawn(async move {
+            let addr = BTreeSet::from_iter(worker_addrs);
+
+            let protocol = client::CoordProtocol::new();
+            let coord = RussulaBuilder::new(addr, protocol, POLL_DELAY_DURATION);
+            let mut coord = coord.build().await.unwrap();
+            coord.run_till_ready().await.unwrap();
+            coord
+        });
+        let join = tokio::join!(c1);
+        let mut coord = join.0.unwrap();
+        {
+            coord.run_till_worker_running().await.unwrap();
+        }
+
+        while coord.poll_done().await.unwrap().is_pending() {
+            println!("poll state: Done");
+        }
+
+        {
+            let worker_join = join_all(workers).await;
+            println!("worker done");
+            for w in worker_join {
+                assert!(w.unwrap().is_done_state());
+            }
+        }
     }
 }
