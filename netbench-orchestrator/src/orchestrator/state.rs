@@ -29,7 +29,7 @@ pub const STATE: State = State {
     // TODO take as input from user
     // Configure hosts with an ec2 key pair to enable ssh access. This is
     // use for downloading logs from the remote host post a netbench run.
-    ssh_key_name: None,
+    ssh_key_name: Some("apoorvko_m1"),
 };
 
 pub struct State {

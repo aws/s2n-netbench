@@ -47,9 +47,15 @@ pub async fn run(
 
     update_dashboard_with_instances(&s3_client, config, &infra, &unique_id).await?;
 
-    run_netbench(run_mode, config, &infra, &ssm_client, &unique_id).await?;
-
-    report::generate_report(&s3_client, &unique_id, &infra, config).await?;
+    run_netbench(
+        run_mode,
+        config,
+        &infra,
+        &ssm_client,
+        &s3_client,
+        &unique_id,
+    )
+    .await?;
 
     // Cleanup
     infra
@@ -119,6 +125,7 @@ async fn run_netbench(
     config: &OrchestratorConfig,
     infra: &InfraDetail,
     ssm_client: &aws_sdk_ssm::Client,
+    s3_client: &aws_sdk_s3::Client,
     unique_id: &str,
 ) -> OrchResult<()> {
     if matches!(run_mode, RunMode::Full) {
@@ -193,6 +200,8 @@ async fn run_netbench(
             )
             .await?;
         }
+
+        report::generate_report(&s3_client, &unique_id, &infra, config).await?;
     }
 
     Ok(())
