@@ -9,7 +9,7 @@ use tracing::{error, info};
 
 mod error;
 mod event;
-mod netbench;
+pub mod netbench;
 mod network_utils;
 mod protocol;
 mod states;

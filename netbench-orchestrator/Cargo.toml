@@ -15,6 +15,8 @@ path = "src/russula_cli.rs"
 [dependencies]
 tokio = { version = "1.26.0", features = ["full"] }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tracing-appender = "0.2"
+uuid = { version = "1", features = ["v4"] }
 structopt = { version = "0.3.26", default-features = false }
 bytes = "1.4.0"
 humantime = "2.1.0"
