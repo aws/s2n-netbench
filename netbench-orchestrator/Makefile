@@ -14,7 +14,26 @@
 # 					 # --netbench-scenario-file scripts/request_response_multi_11_incast_1GB_req_resp.json
 # 					 # --placement partition \
 
-# -------------------- test russula_cli with netbench
+# -------------------- test russula_cli with real netbench
+# *Build netbench project (s2n-netbench root project dir):*
+# `cargo build --release`
+#
+# *Launch workers (netbench-orchestrator dir):*
+# `make net_server_worker1`
+# `make net_server_worker2`
+#
+# *Launch coordinator (netbench-orchestrator dir):*
+# `make net_server_coord`
+#
+# *Wait for the netbench process to start. Then launch the netbench client process (netbench-orchestrator dir):*
+# `./scripts/net_client.sh`
+#
+# It's possible to launch multiple runs:
+# `./scripts/net_client.sh`
+# `./scripts/net_client.sh`
+#
+# *To finish, go to the coordinator and enter any key to terminate the coordinator and workers*
+#
 net_server_coord:
 	RUST_LOG=none,orchestrator=debug,russula_cli=debug cargo run --bin russula_cli -- \
 					 --poll-delay 2s \
@@ -27,9 +46,9 @@ net_server_worker1:
 					 --poll-delay 2s \
 					 netbench-server-worker \
 					 --russula-port 7000 \
-					 --netbench-path ~/projects/s2n-netbench/target/release \
+					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario request_response_incast.json \
+					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
 					 --netbench-port 7001 \
 
 net_server_worker2:
@@ -37,13 +56,13 @@ net_server_worker2:
 					 --poll-delay 2s \
 					 netbench-server-worker \
 					 --russula-port 8000 \
-					 --netbench-path ~/projects/s2n-netbench/target/release \
+					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario request_response_incast.json \
+					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
 					 --netbench-port 8001 \
 
 
-# -------------------- test russula_cli
+# -------------------- test russula_cli with simulated netbench process
 test_server_coord:
 	RUST_LOG=none,orchestrator=debug,russula_cli=debug cargo run --bin russula_cli -- \
 					 --poll-delay 1s \

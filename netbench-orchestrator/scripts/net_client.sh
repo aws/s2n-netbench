@@ -1,6 +1,7 @@
 #/usr/bin/env bash
 
-# helper script for testing `make net_server_coord` and `make net_server_worker*`
+# helper script for testing russula with a real netbench process over localhost.
+# See the documentation in Makefile (`make net_server_coord`) for how to use.
 
 set -e
 
