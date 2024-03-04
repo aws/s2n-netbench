@@ -2,12 +2,13 @@
 import boto3
 import logging
 from datetime import datetime, timezone
+from os import getenv
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Max instance lifetime in seconds
-MAX_LIFETIME: int = 86400
+MAX_LIFETIME: int = int(getenv("MAX_LIFETIME", 86400))
 
 def get_ebs_age(date_obj: datetime|str) -> int:
     # Convert a date object or str to age in seconds

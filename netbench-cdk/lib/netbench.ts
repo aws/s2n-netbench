@@ -9,6 +9,8 @@ import * as logs from 'aws-cdk-lib/aws-logs'
 import { Config, NetbenchStackProps } from './config';
 import path from 'path';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
+import { readFileSync } from 'fs';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export class NetbenchInfra extends cdk.Stack {
     private config: Config = new Config;
@@ -18,6 +20,8 @@ export class NetbenchInfra extends cdk.Stack {
         this.createVPC();
         this.createCloudwatchGroup();
         this.createRole();
+        this.createMonitorLambda();
+
         const GHAUser = this.createGHAIamUser();
         // We're over-riding CF's naming scheme so this name 
         // must be globally unique. By default, AWSStage will be username.
@@ -166,4 +170,14 @@ export class NetbenchInfra extends cdk.Stack {
         return netbenchBucket;
     };
 
+    private createMonitorLambda(): any {
+        const monitorLambda = new cdk.aws_lambda.Function(this, "netbenchMonitor", {
+            runtime: cdk.aws_lambda.Runtime.PYTHON_3_12,
+            handler: "index.lambda_handler",
+            code: cdk.aws_lambda.Code.fromInline(readFileSync('./netbench-monitor/handler.py','utf-8')),
+            timeout: cdk.Duration.seconds(15)
+        })
+        //monitorLambda.addToRolePolicy(PolicyStatement())
+        return monitorLambda;
+    }
 }
