@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 import { Construct } from 'constructs';
-import * as cdk from 'aws-cdk-lib';
 import { BucketDeployment } from 'aws-cdk-lib/aws-s3-deployment';
-import { aws_cloudfront as cloudfront } from 'aws-cdk-lib';
-import { aws_ec2 as ec2, aws_iam as iam, aws_s3 as s3, CfnResource } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib'
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as logs from 'aws-cdk-lib/aws-logs'
 import { Config, NetbenchStackProps } from './config';
@@ -11,6 +9,8 @@ import path from 'path';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
 import { readFileSync } from 'fs';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { scheduler } from 'timers/promises';
+import { Schedule } from 'aws-cdk-lib/aws-events';
 
 export class NetbenchInfra extends cdk.Stack {
     private config: Config = new Config;
@@ -56,34 +56,34 @@ export class NetbenchInfra extends cdk.Stack {
 
     private createVPC() {
         // Creating VPC for clients and servers
-        const vpc = new ec2.Vpc(this, 'vpc', {
-            ipAddresses: ec2.IpAddresses.cidr(this.config.VpcCidr),
+        const vpc = new cdk.aws_ec2.Vpc(this, 'vpc', {
+            ipAddresses: cdk.aws_ec2.IpAddresses.cidr(this.config.VpcCidr),
             maxAzs: this.config.VpcMaxAzs,
             subnetConfiguration: [
                 {
                     cidrMask: this.config.VpcCidrMask,
                     name: 'NetbenchRunnerSubnet',
-                    subnetType: ec2.SubnetType.PUBLIC,
+                    subnetType: cdk.aws_ec2.SubnetType.PUBLIC,
                 }
             ],
 
         });
-        
+
         //Tag all available subnets the same. This behavior might need to change when MultiRegion is added.
         const subnetTagKey = "aws-cdk:netbench-subnet-name";
         const subnetTagValue = "public-subnet-for-netbench-runners";
         vpc.publicSubnets.forEach(element => {
-          cdk.Tags.of(element).add(subnetTagKey, subnetTagValue);
+            cdk.Tags.of(element).add(subnetTagKey, subnetTagValue);
         });
-        new cdk.CfnOutput(this, "output:NetbenchSubnetTagKey", { value: subnetTagKey});
-        new cdk.CfnOutput(this, "output:NetbenchSubnetTagValue", { value: subnetTagValue});
-        new cdk.CfnOutput(this, "output:"+this.stackName+"Region", { value: this.region});
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagKey", { value: subnetTagKey });
+        new cdk.CfnOutput(this, "output:NetbenchSubnetTagValue", { value: subnetTagValue });
+        new cdk.CfnOutput(this, "output:" + this.stackName + "Region", { value: this.region });
     };
     private createCloudFront(id: string, bucket: IBucket) {
-        const cfDistribution = new cloudfront.Distribution(this, id, {
+        const cfDistribution = new cdk.aws_cloudfront.Distribution(this, id, {
             defaultBehavior: {
                 origin: new S3Origin(bucket),
-                viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                viewerProtocolPolicy: cdk.aws_cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
             },
             defaultRootObject: "index.html"
         });
@@ -92,19 +92,19 @@ export class NetbenchInfra extends cdk.Stack {
 
     private createRole() {
         // Create IAM role for the EC2 instances
-        const instanceRole = new iam.Role(this, 'NetbenchRunnerInstanceRole', {
-            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        const instanceRole = new cdk.aws_iam.Role(this, 'NetbenchRunnerInstanceRole', {
+            assumedBy: new cdk.aws_iam.ServicePrincipal('ec2.amazonaws.com'),
         });
 
         // Create an instance profile to allow ec2 to use the role.
         // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html
-        const instanceProfile = new iam.InstanceProfile(this, 'instanceProfile', { role: instanceRole })
+        const instanceProfile = new cdk.aws_iam.InstanceProfile(this, 'instanceProfile', { role: instanceRole })
         new cdk.CfnOutput(this, "output:NetbenchRunnerInstanceProfile", { value: instanceProfile.instanceProfileName })
 
         // Attach managed policies to the IAM role
-        instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
+        instanceRole.addManagedPolicy(cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMFullAccess'));
         // TODO: This is too permissive- scope this down to just the netbench bucket.
-        instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'));
+        instanceRole.addManagedPolicy(cdk.aws_iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'));
     };
 
     private createGHAIamUser(): cdk.aws_iam.User {
@@ -132,14 +132,14 @@ export class NetbenchInfra extends cdk.Stack {
         // over-rides CloudFormation's unique naming scheme
         let bucketProperties = {
             bucketName: id,
-            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-            encryption: s3.BucketEncryption.S3_MANAGED,
+            blockPublicAccess: cdk.aws_s3.BlockPublicAccess.BLOCK_ALL,
+            encryption: cdk.aws_s3.BucketEncryption.S3_MANAGED,
             enforceSSL: true,
             // On stack destroy, keep the bucket and it's contents, leaving an orphan.
             // This will require manual cleanup if you'd like to recreate the stack.
             removalPolicy: cdk.RemovalPolicy.RETAIN,
         }
-        const netbenchBucket = new s3.Bucket(this, id, bucketProperties)
+        const netbenchBucket = new cdk.aws_s3.Bucket(this, id, bucketProperties)
 
         if (reportBucket) {
             // If this is a reporting bucket, populate it with the contents of ./staticfiles/.
@@ -174,10 +174,30 @@ export class NetbenchInfra extends cdk.Stack {
         const monitorLambda = new cdk.aws_lambda.Function(this, "netbenchMonitor", {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_12,
             handler: "index.lambda_handler",
-            code: cdk.aws_lambda.Code.fromInline(readFileSync('./netbench-monitor/handler.py','utf-8')),
+            code: cdk.aws_lambda.Code.fromInline(readFileSync('./netbench-monitor/handler.py', 'utf-8')),
             timeout: cdk.Duration.seconds(15)
         })
         //monitorLambda.addToRolePolicy(PolicyStatement())
+        const describePolicy = cdk.aws_iam.PolicyStatement.fromJson({
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "ec2:DescribeInstances",
+            "Resource": "*"
+        }
+        );
+        monitorLambda.addToRolePolicy(describePolicy);
+
+        new cdk.aws_events.Rule(this, 'ScheduledRun', {
+            description: "Schedule; managed by cdk",
+            schedule: Schedule.cron({
+                year: "*",
+                month: "*",
+                day: "*",
+                hour: "17",
+                minute: "0"
+            }),
+            targets: [new cdk.aws_events_targets.LambdaFunction(monitorLambda)],
+        });
         return monitorLambda;
     }
 }

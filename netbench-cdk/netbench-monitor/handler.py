@@ -7,7 +7,8 @@ from os import getenv
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Max instance lifetime in seconds
+# Max instance lifetime in seconds defaulting to one day.
+# Over-rideable via an environment variable.
 MAX_LIFETIME: int = int(getenv("MAX_LIFETIME", 86400))
 
 def get_ebs_age(date_obj: datetime|str) -> int:
