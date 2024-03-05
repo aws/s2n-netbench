@@ -513,7 +513,7 @@ mod tests {
     use super::*;
     use crate::{scenario::Scenario, testing, timer, trace::MemoryLogger, units::*, Driver};
     use futures_test::task::new_count_waker;
-    use insta::assert_display_snapshot;
+    use insta::assert_snapshot;
     use std::collections::HashSet;
 
     fn test(config: Config, scenario: &Scenario) -> (MemoryLogger, MemoryLogger) {
@@ -600,11 +600,11 @@ mod tests {
 
                 let (client_trace, server_trace) = test($config, &scenario);
 
-                assert_display_snapshot!(
+                assert_snapshot!(
                     concat!(stringify!($name), "__client"),
                     client_trace.as_str().unwrap()
                 );
-                assert_display_snapshot!(
+                assert_snapshot!(
                     concat!(stringify!($name), "__server"),
                     server_trace.as_str().unwrap()
                 );
