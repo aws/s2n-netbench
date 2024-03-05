@@ -40,6 +40,9 @@ def lambda_handler(event, context):
          'Values': [ "running"]
         }
       ])
+    #if SOME_SAFETY_CONDITION:
+    #  for instance in response.instance_above_max:
+    #    cleanup_instance(instance)
     return process_describe_instances(response)
 
 def process_describe_instances(response: dict) -> dict:
@@ -67,3 +70,6 @@ def process_describe_instances(response: dict) -> dict:
             "overall_alarm": alarm, 
             "instances_below_max": instance_below_max, 
             "instances_above_max": instance_above_max }
+
+def terminate_instance(instance_id: str) -> int:
+    raise NotImplemented

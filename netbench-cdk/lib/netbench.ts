@@ -8,8 +8,6 @@ import { Config, NetbenchStackProps } from './config';
 import path from 'path';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
 import { readFileSync } from 'fs';
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { scheduler } from 'timers/promises';
 import { Schedule } from 'aws-cdk-lib/aws-events';
 
 export class NetbenchInfra extends cdk.Stack {
@@ -181,7 +179,7 @@ export class NetbenchInfra extends cdk.Stack {
         const describePolicy = cdk.aws_iam.PolicyStatement.fromJson({
             "Sid": "VisualEditor0",
             "Effect": "Allow",
-            "Action": "ec2:DescribeInstances",
+            "Action": ["ec2:DescribeInstances", "ec2:TerminateInstances"],
             "Resource": "*"
         }
         );
@@ -201,3 +199,4 @@ export class NetbenchInfra extends cdk.Stack {
         return monitorLambda;
     }
 }
+
