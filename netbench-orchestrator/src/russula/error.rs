@@ -42,11 +42,14 @@ impl std::error::Error for RussulaError {}
 
 impl RussulaError {
     /// Specify which errors are non-recoverable.
-    #[allow(clippy::match_like_matches_macro)]
     pub fn is_fatal(&self) -> bool {
         match self {
+            RussulaError::NetworkConnectionRefused { dbg: _ }
+            | RussulaError::NetworkFail { dbg: _ }
+            | RussulaError::ReadFail { dbg: _ }
+            | RussulaError::BadMsg { dbg: _ } => true,
+            // read/write operation would blocked and should be tried later
             RussulaError::NetworkBlocked { dbg: _ } => false,
-            _ => true,
         }
     }
 }

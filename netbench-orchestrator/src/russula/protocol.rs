@@ -7,56 +7,18 @@ use super::{
     network_utils,
     network_utils::Msg,
     states::{StateApi, TransitionStep},
-    RussulaResult,
+    ProtocolState, RussulaResult,
 };
 use crate::russula::event::EventRecorder;
 use core::{task::Poll, time::Duration};
-use paste::paste;
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tracing::{debug, info};
 
-// Send the Done status multiple times to the peer incase there is packet loss.
+// Send the Done status multiple times to the peer in case there is packet loss.
 const NOTIFY_DONE_TIMEOUT: Duration = Duration::from_secs(1);
-
-macro_rules! state_api {
-{
-    $(#[$meta:meta])*
-    $state:ident
-} => {paste!{
-
-    $(#[$meta])*
-    fn [<$state _state>](&self) -> Self::State;
-
-    $(#[$meta])*
-    /// Check if the Instance is at the desired state
-    fn [<is_ $state _state>](&self) -> bool {
-        let state = self.[<$state _state>]();
-        self.state().eq(&state)
-    }
-
-    $(#[$meta])*
-    async fn [<poll_ $state>](&mut self, stream: &mut TcpStream) -> RussulaResult<Poll<()>> {
-        self.poll_state(stream, &self.[<$state _state>]()).await
-    }
-}};
-}
-
-macro_rules! notify_peer {
-{$protocol:ident, $stream:ident} => {
-    use crate::russula::network_utils;
-    let msg = Msg::new($protocol.state().as_bytes())
-        .expect("Msg data should be a valid string");
-    debug!(
-        "{} ----> send msg {}",
-        $protocol.name(),
-        &msg.as_str()
-    );
-    network_utils::send_msg($stream, msg).await?;
-    $protocol.on_event(EventType::SendMsg);
-}
-}
-pub(crate) use notify_peer;
+// Notify done multiple time in case of packet loss.. this is best effort
+const DONE_SENT_COUNT: usize = 3;
 
 pub trait Protocol: Clone {
     type State: StateApi;
@@ -83,16 +45,39 @@ pub trait Protocol: Clone {
     /// Track the peers state. Mainly used for debugging.
     fn update_peer_state(&mut self, msg: Msg) -> RussulaResult<()>;
 
-    state_api!(ready);
-    state_api!(done);
-    state_api!(
-        /// Should only be called by Coordinators
-        worker_running
-    );
+    fn ready_state(&self) -> Self::State;
+    fn done_state(&self) -> Self::State;
+    /// Should only be called by Coordinators
+    fn worker_running_state(&self) -> Self::State;
+
+    /// Check if the Instance is at the desired state
+    fn is_state(&self, proto_state: ProtocolState) -> bool {
+        let state = match proto_state {
+            ProtocolState::Ready => self.ready_state(),
+            ProtocolState::Done => self.done_state(),
+            ProtocolState::WorkerRunning => self.worker_running_state(),
+        };
+        self.state().eq(&state)
+    }
+
+    async fn poll_state(
+        &mut self,
+        stream: &mut TcpStream,
+        proto_state: ProtocolState,
+    ) -> RussulaResult<Poll<()>> {
+        match proto_state {
+            ProtocolState::Ready => self.poll_state_impl(stream, &self.ready_state()).await,
+            ProtocolState::Done => self.poll_state_impl(stream, &self.done_state()).await,
+            ProtocolState::WorkerRunning => {
+                self.poll_state_impl(stream, &self.worker_running_state())
+                    .await
+            }
+        }
+    }
 
     /// Run operations for the current state and attempt to make progress until
     /// the desired state is reached.
-    async fn poll_state(
+    async fn poll_state_impl(
         &mut self,
         stream: &mut TcpStream,
         desired_state: &Self::State,
@@ -112,11 +97,11 @@ pub trait Protocol: Clone {
         // Notify the peer that we have reached a terminal state
         //
         // The Done state is special and only notifies the peer of our Done status.
-        if self.is_done_state() {
-            tracing::info!("{}", self.event_recorder());
+        if self.is_state(ProtocolState::Done) {
+            tracing::info!("{:?}", self.event_recorder());
 
-            // Notify 3 time in case of packet loss.. this is best effort
-            for _i in 0..3 {
+            // Notify done multiple time in case of packet loss.. this is best effort
+            for _i in 0..DONE_SENT_COUNT {
                 match self.run_current(stream).await {
                     Ok(_) => (),
                     // We notify the peer of the Done state multiple times. Since the peer could
@@ -182,7 +167,7 @@ pub trait Protocol: Clone {
                 Err(err) if !err.is_fatal() => {
                     // notifying the peer here is an optimization since the protocol
                     // should be polled externally and this operation retried.
-                    notify_peer!(self, stream);
+                    self.notify_peer(stream).await?;
 
                     break;
                 }
@@ -226,7 +211,7 @@ pub trait Protocol: Clone {
         *self.state_mut() = nxt;
 
         // notify the peer of the new state
-        notify_peer!(self, stream);
+        self.notify_peer(stream).await?;
 
         Ok(())
     }
@@ -248,5 +233,14 @@ pub trait Protocol: Clone {
     /// Process an event.
     fn on_event(&mut self, event: EventType) {
         self.event_recorder().process(event);
+    }
+
+    async fn notify_peer(&mut self, stream: &mut TcpStream) -> RussulaResult<()> {
+        let msg = Msg::new(self.state().as_bytes()).expect("Msg data should be a valid string");
+        debug!("{} ----> send msg {}", self.name(), &msg.as_str());
+        network_utils::send_msg(stream, msg).await?;
+        self.on_event(EventType::SendMsg);
+
+        Ok(())
     }
 }

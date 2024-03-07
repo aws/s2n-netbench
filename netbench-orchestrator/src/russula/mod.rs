@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use core::{task::Poll, time::Duration};
-use paste::paste;
 use std::{collections::BTreeSet, net::SocketAddr};
 use tokio::net::TcpStream;
 use tracing::{error, info};
@@ -16,18 +15,38 @@ mod states;
 use error::{RussulaError, RussulaResult};
 use protocol::Protocol;
 
+const CONNENT_RETRY_ATTEMPT: usize = 10;
+
+#[derive(Debug, Copy, Clone)]
+pub enum ProtocolState {
+    /// The endpoint has established connection with its peer and
+    /// is ready to make progress.
+    Ready,
+
+    /// Indicates the protocol's terminal state.
+    Done,
+
+    /// Indicates that worker are running and accepting work.
+    ///
+    /// For netbench this state be used to confirm that all servers are
+    /// running and accepting connection before starting netbench clients.
+    /// Should only be called by Coordinators.
+    WorkerRunning,
+}
+
+/// An instance of a protocol with an established connection to its peer.
 struct ProtocolInstance<P: Protocol> {
     pub addr: SocketAddr,
     pub stream: TcpStream,
     pub protocol: P,
 }
 
-/// A coordination framework.
+/// A Russula Endpoint.
 ///
-/// Russula is a wrapper over a pair of Coordinator and Worker [Protocol]s.
-/// A Coordinator can be used to synchronize multiple workers across
-/// different hosts.
-pub struct Russula<P: Protocol> {
+/// An Endpoint can be of type Coordinator or Worker. A Coordinator can
+/// be used to synchronize multiple workers across different hosts. A Worker
+/// communicates with a Coordinator to make progress.
+pub struct Endpoint<P: Protocol> {
     /// List of protocol instance to synchronize with.
     instance_list: Vec<ProtocolInstance<P>>,
 
@@ -35,28 +54,21 @@ pub struct Russula<P: Protocol> {
     poll_delay: Duration,
 }
 
-macro_rules! state_api {
-    {
-        $(#[$meta:meta])*
-            $state:ident
-    } => {paste!{
-
-    $(#[$meta])*
-    pub async fn [<run_till_ $state>](&mut self) -> RussulaResult<()> {
-        while self.[<poll_ $state>]().await?.is_pending() {
+impl<P: Protocol + Send> Endpoint<P> {
+    pub async fn run_till(&mut self, state: ProtocolState) -> RussulaResult<()> {
+        while self.poll_state(state).await?.is_pending() {
             tokio::time::sleep(self.poll_delay).await;
         }
 
         Ok(())
     }
 
-    $(#[$meta])*
-    pub async fn [<poll_ $state>](&mut self) -> RussulaResult<Poll<()>> {
+    pub async fn poll_state(&mut self, state: ProtocolState) -> RussulaResult<Poll<()>> {
         // Poll each peer protocol instance.
         //
         // If the peer is already in the desired state then this should be a noop.
         for peer in self.instance_list.iter_mut() {
-            if let Err(err) = peer.protocol.[<poll_ $state>](&mut peer.stream).await {
+            if let Err(err) = peer.protocol.poll_state(&mut peer.stream, state).await {
                 if err.is_fatal() {
                     error!("{} {}", err, peer.addr);
                     panic!("{} {}", err, peer.addr);
@@ -65,7 +77,7 @@ macro_rules! state_api {
         }
 
         // Check that all instances are at the desired state.
-        let poll = if self.[<is_ $state _state>]() {
+        let poll = if self.is_state(state) {
             Poll::Ready(())
         } else {
             Poll::Pending
@@ -74,34 +86,15 @@ macro_rules! state_api {
     }
 
     /// Check if all instances are at the desired state
-    fn [< is_ $state _state>](&self) -> bool {
+    fn is_state(&self, state: ProtocolState) -> bool {
         for peer in self.instance_list.iter() {
             // All instance must be at the desired state
-            if !peer.protocol.[< is_ $state _state>]() {
+            if !peer.protocol.is_state(state) {
                 return false;
             }
         }
         true
     }
-}};
-}
-
-impl<P: Protocol + Send> Russula<P> {
-    state_api!(
-        /// Successfully connected to peer instances and ready to make progress.
-        ready
-    );
-    state_api!(
-        /// The coordination completed and reached a terminal state.
-        done
-    );
-    state_api!(
-        /// Note: Should only be called by Coordinators
-        ///
-        /// A intermediate state to query if Worker peers are in some
-        /// desired state.
-        worker_running
-    );
 }
 
 type SockProtocol<P> = (SocketAddr, P);
@@ -130,10 +123,10 @@ impl<P: Protocol> RussulaBuilder<P> {
         }
     }
 
-    pub async fn build(self) -> RussulaResult<Russula<P>> {
+    pub async fn build(self) -> RussulaResult<Endpoint<P>> {
         let mut stream_protocol_list = Vec::new();
         for (addr, protocol) in self.protocol_addr_pair_list.into_iter() {
-            let mut retry_attempts = 10;
+            let mut retry_attempts = CONNENT_RETRY_ATTEMPT;
             loop {
                 if retry_attempts == 0 {
                     return Err(RussulaError::NetworkConnectionRefused {
@@ -169,7 +162,7 @@ impl<P: Protocol> RussulaBuilder<P> {
             }
         }
 
-        Ok(Russula {
+        Ok(Endpoint {
             instance_list: stream_protocol_list,
             poll_delay: self.poll_delay,
         })

@@ -13,9 +13,8 @@ name = "russula_cli"
 path = "src/russula_cli.rs"
 
 [dependencies]
-tokio = { version = "1.26.0", features = ["full"] }
-bytes = "1.4.0"
+tokio = { version = "1", features = ["full"] }
+bytes = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
-tracing = "0.1.40"
-paste = "1.0.14"
+tracing = "0.1"
