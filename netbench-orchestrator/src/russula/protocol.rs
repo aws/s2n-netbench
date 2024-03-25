@@ -15,9 +15,8 @@ use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tracing::{debug, info};
 
-// Send the Done status multiple times to the peer in case there is packet loss.
+// Send the Done status (terminal state) multiple times to the peer
 const NOTIFY_DONE_TIMEOUT: Duration = Duration::from_secs(1);
-// Notify done multiple time in case of packet loss.. this is best effort
 const DONE_SENT_COUNT: usize = 3;
 
 pub trait Protocol: Clone {
@@ -100,7 +99,7 @@ pub trait Protocol: Clone {
         if self.is_state(ProtocolState::Done) {
             tracing::info!("{:?}", self.event_recorder());
 
-            // Notify done multiple time in case of packet loss.. this is best effort
+            // Send the Done status (terminal state) multiple times to the peer
             for _i in 0..DONE_SENT_COUNT {
                 match self.run_current(stream).await {
                     Ok(_) => (),

@@ -1,5 +1,4 @@
 # Netbench Orchestrator
-
 Automate netbench runs in the cloud.
 
 ## Goals
@@ -21,7 +20,7 @@ production systems. The goal of this project is to automate Netbench runs in the
 **Running**
 
 ```
-git clone git@github.com:toidiu/netbench_orchestrator.git && cd netbench_orchestrator
+git clone git@github.com:aws/s2n-netbench.git && cd s2n-netbench
 
 # Run the orchestrator
 make run_orchestrator

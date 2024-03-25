@@ -28,7 +28,7 @@ pub enum ProtocolState {
 
     /// Indicates that worker are running and accepting work.
     ///
-    /// For netbench this state be used to confirm that all servers are
+    /// For netbench this state can be used to confirm that all servers are
     /// running and accepting connection before starting netbench clients.
     /// Should only be called by Coordinators.
     WorkerRunning,
