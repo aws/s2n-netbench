@@ -34,7 +34,7 @@ pub enum ProtocolState {
     WorkerRunning,
 }
 
-/// An instance of a protocol with an established connection to its peer.
+/// An established connection to a running instance of a Russula protocol.
 struct ProtocolInstance<P: Protocol> {
     pub addr: SocketAddr,
     pub stream: TcpStream,
@@ -47,28 +47,38 @@ struct ProtocolInstance<P: Protocol> {
 /// be used to synchronize multiple workers across different hosts. A Worker
 /// communicates with a Coordinator to make progress.
 pub struct Endpoint<P: Protocol> {
-    /// List of protocol instance to synchronize with.
+    /// List of protocol instances to synchronize.
     instance_list: Vec<ProtocolInstance<P>>,
 
-    /// Polling frequency when trying to make progress.
+    /// Polling frequency.
     poll_delay: Duration,
 }
 
 impl<P: Protocol + Send> Endpoint<P> {
-    pub async fn run_till(&mut self, state: ProtocolState) -> RussulaResult<()> {
-        while self.poll_state(state).await?.is_pending() {
+    /// Drive the underlying list of protocols until the desired state.
+    ///
+    /// For a non-blocking version use [Self::poll_until]
+    pub async fn run_untill(&mut self, desired_state: ProtocolState) -> RussulaResult<()> {
+        while self.poll_until(desired_state).await?.is_pending() {
             tokio::time::sleep(self.poll_delay).await;
         }
 
         Ok(())
     }
 
-    pub async fn poll_state(&mut self, state: ProtocolState) -> RussulaResult<Poll<()>> {
+    /// Poll the underlying list of protocols until the desired state.
+    ///
+    /// Attempt to drive each instance
+    pub async fn poll_until(&mut self, desired_state: ProtocolState) -> RussulaResult<Poll<()>> {
         // Poll each peer protocol instance.
         //
         // If the peer is already in the desired state then this should be a noop.
         for peer in self.instance_list.iter_mut() {
-            if let Err(err) = peer.protocol.poll_state(&mut peer.stream, state).await {
+            if let Err(err) = peer
+                .protocol
+                .poll_state(&mut peer.stream, desired_state)
+                .await
+            {
                 if err.is_fatal() {
                     error!("{} {}", err, peer.addr);
                     panic!("{} {}", err, peer.addr);
@@ -77,7 +87,7 @@ impl<P: Protocol + Send> Endpoint<P> {
         }
 
         // Check that all instances are at the desired state.
-        let poll = if self.is_state(state) {
+        let poll = if self.is_state(desired_state) {
             Poll::Ready(())
         } else {
             Poll::Pending
