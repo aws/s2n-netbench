@@ -103,6 +103,21 @@ impl ClientContext {
     }
 }
 
+// The following state machine diagram shows the state transitions between a server
+// Coordinator and Worker.
+//
+// For example, lets walk thru the first few state transitions:
+//
+// The coordinator starts in the `CheckWorker` state while the worker
+// starts in the `WaitCoordInit` state. The worker "waits" for the coordinator to
+// to establish a connection. The Coordinator attempts to "check" if the worker is
+// running. Once the Coordinator successfully checks-in, the Worker can transition
+// to the `Ready` state. At this point the Worker can signal `Ready` to the
+// Coordinator, which can then also transition to the `Ready` state.
+//
+// [Coordinator]             [Worker]
+// =========================================
+//
 // CheckWorker   --------->  WaitCoordInit
 //                              |
 //                              v
@@ -145,6 +160,20 @@ pub mod server {
     pub use super::server_worker::WorkerProtocol;
 }
 
+// The following state machine diagram shows the state transitions between a client
+// Coordinator and Worker.
+//
+// For example, lets walk thru the first few state transitions:
+//
+// The coordinator starts in the `CheckWorker` state while the worker
+// starts in the `WaitCoordInit` state. The worker "waits" for the coordinator to
+// to establish a connection. The Coordinator attempts to "check" if the worker is
+// running. Once the Coordinator successfully checks-in, the Worker can transition
+// to the `Ready` state. At this point the Worker can signal `Ready` to the
+// Coordinator, which can then also transition to the `Ready` state.
+//
+// [Coordinator]             [Worker]
+// =========================================
 // CheckWorker   --------->  WaitCoordInit
 //                              |
 //                              v
