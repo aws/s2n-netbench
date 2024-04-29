@@ -7,7 +7,7 @@ use super::{
     network_utils,
     network_utils::Msg,
     states::{StateApi, TransitionStep},
-    ProtocolState, RussulaResult,
+    RussulaResult, WorkflowState,
 };
 use crate::russula::event::EventRecorder;
 use core::{task::Poll, time::Duration};
@@ -20,10 +20,10 @@ const NOTIFY_DONE_TIMEOUT: Duration = Duration::from_secs(1);
 // Notify done multiple time in case of packet loss.. this is best effort
 const DONE_SENT_COUNT: usize = 3;
 
-pub trait Protocol: Clone {
+pub(crate) trait WorkflowTrait: Clone {
     type State: StateApi;
 
-    /// Protocol specific pairing behavior.
+    /// Workflow specific pairing behavior.
     ///
     /// Coordinators should connect to Workers. Workers should accept connections
     /// from Coordinators.
@@ -36,7 +36,7 @@ pub trait Protocol: Clone {
     fn state(&self) -> &Self::State;
     fn state_mut(&mut self) -> &mut Self::State;
 
-    /// Track events for the current protocol.
+    /// Track events for the current workflow.
     fn event_recorder(&mut self) -> &mut EventRecorder;
 
     /// Used for debugging and creating unique log files.
@@ -51,11 +51,11 @@ pub trait Protocol: Clone {
     fn worker_running_state(&self) -> Self::State;
 
     /// Check if the Instance is at the desired state
-    fn is_state(&self, proto_state: ProtocolState) -> bool {
-        let state = match proto_state {
-            ProtocolState::Ready => self.ready_state(),
-            ProtocolState::Done => self.done_state(),
-            ProtocolState::WorkerRunning => self.worker_running_state(),
+    fn is_state(&self, workflow_state: WorkflowState) -> bool {
+        let state = match workflow_state {
+            WorkflowState::Ready => self.ready_state(),
+            WorkflowState::Done => self.done_state(),
+            WorkflowState::WorkerRunning => self.worker_running_state(),
         };
         self.state().eq(&state)
     }
@@ -63,12 +63,12 @@ pub trait Protocol: Clone {
     async fn poll_state(
         &mut self,
         stream: &mut TcpStream,
-        proto_state: ProtocolState,
+        workflow_state: WorkflowState,
     ) -> RussulaResult<Poll<()>> {
-        match proto_state {
-            ProtocolState::Ready => self.poll_state_impl(stream, &self.ready_state()).await,
-            ProtocolState::Done => self.poll_state_impl(stream, &self.done_state()).await,
-            ProtocolState::WorkerRunning => {
+        match workflow_state {
+            WorkflowState::Ready => self.poll_state_impl(stream, &self.ready_state()).await,
+            WorkflowState::Done => self.poll_state_impl(stream, &self.done_state()).await,
+            WorkflowState::WorkerRunning => {
                 self.poll_state_impl(stream, &self.worker_running_state())
                     .await
             }
@@ -97,7 +97,7 @@ pub trait Protocol: Clone {
         // Notify the peer that we have reached a terminal state
         //
         // The Done state is special and only notifies the peer of our Done status.
-        if self.is_state(ProtocolState::Done) {
+        if self.is_state(WorkflowState::Done) {
             tracing::info!("{:?}", self.event_recorder());
 
             // Notify done multiple time in case of packet loss.. this is best effort
@@ -165,7 +165,7 @@ pub trait Protocol: Clone {
                     }
                 }
                 Err(err) if !err.is_fatal() => {
-                    // notifying the peer here is an optimization since the protocol
+                    // notifying the peer here is an optimization since the workflow
                     // should be polled externally and this operation retried.
                     self.notify_peer(stream).await?;
 

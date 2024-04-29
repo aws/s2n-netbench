@@ -39,7 +39,7 @@ tasks such as installing/updating dependencies and uploading netbench data to s3
 also used to start the Russula worker process on each host. Russula is primarily used for
 timing sensitive tasks such netbench, which require starting and stopping multiple servers
 and clients processes across multiple hosts. Specifically, the 'Worker' component of a
-protocol is executed on the remote host, while the 'Coordinator' component is run locally
+workflow is executed on the remote host, while the 'Coordinator' component is run locally
 as part of the Orchestrator.
 
 ### Debugging
@@ -55,7 +55,7 @@ changed as desired.
 
 #### Remote
 **SSH access**
-ec2 accepts the name of a ssh-key when creating a new host. This is set to a default value
+ec2 accepts the name of an ssh-key when creating a new host. This is set to a default value
 under the value `ssh_key_name` in the [state.rs](/src/state.rs) file. By providing this key
 it is possible to ssh onto the remote host locally: `ssh -oStrictHostKeyChecking=no ec2-user@x.x.x.x`.
 Its also possible to ssh onto a host from the ec2 console on AWS.
@@ -95,10 +95,10 @@ a multi server/client netbench scenario.
 
 Since Russula is used to run Netbench testing it has the following goals:
 - non-blocking: its not acceptable to block since we are trying to do performance testing
-- minimal network noise: since we are trying to measure transport protocols, the coordination protocol
+- minimal network noise: since we are trying to measure transport protocols, the coordination workflow
 should add minimal traffic to the network
-- easily configurable: the protocol should allow for new states to allow for expanding use cases
-- secure: the protocol should not accept executable code since this opens it up for code execution attack.
+- easily configurable: the workflow should allow for new states to allow for expanding use cases
+- secure: the workflow should not accept executable code since this opens it up for code execution attack.
 - easy to develop: exposes logging and introspection into the peers states to allow for easy debugging
 - resilient: should be resilient to errors (network or otherwise); retrying requests when they are considered
 non-fatal

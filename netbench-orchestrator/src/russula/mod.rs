@@ -9,21 +9,21 @@ use tracing::{error, info};
 mod error;
 mod event;
 mod network_utils;
-mod protocol;
 mod states;
+mod workflow;
 
 use error::{RussulaError, RussulaResult};
-use protocol::Protocol;
+use workflow::WorkflowTrait;
 
 const CONNENT_RETRY_ATTEMPT: usize = 10;
 
 #[derive(Debug, Copy, Clone)]
-pub enum ProtocolState {
-    /// The endpoint has established connection with its peer and
+pub enum WorkflowState {
+    /// The workflow has established connection with its peer and
     /// is ready to make progress.
     Ready,
 
-    /// Indicates the protocol's terminal state.
+    /// Indicates the workflow's terminal state.
     Done,
 
     /// Indicates that worker are running and accepting work.
@@ -34,28 +34,28 @@ pub enum ProtocolState {
     WorkerRunning,
 }
 
-/// An instance of a protocol with an established connection to its peer.
-struct ProtocolInstance<P: Protocol> {
+/// An instance of a workflow with an established connection to its peer.
+struct Host<W: WorkflowTrait> {
     pub addr: SocketAddr,
     pub stream: TcpStream,
-    pub protocol: P,
+    pub workflow: W,
 }
 
-/// A Russula Endpoint.
+/// A Workflow instance.
 ///
-/// An Endpoint can be of type Coordinator or Worker. A Coordinator can
+/// An Workflow can be of type Coordinator or Worker. A Coordinator can
 /// be used to synchronize multiple workers across different hosts. A Worker
 /// communicates with a Coordinator to make progress.
-pub struct Endpoint<P: Protocol> {
-    /// List of protocol instance to synchronize with.
-    instance_list: Vec<ProtocolInstance<P>>,
+pub struct Workflow<W: WorkflowTrait> {
+    /// List of workflow instances to synchronize with.
+    instances: Vec<Host<W>>,
 
     /// Polling frequency when trying to make progress.
     poll_delay: Duration,
 }
 
-impl<P: Protocol + Send> Endpoint<P> {
-    pub async fn run_till(&mut self, state: ProtocolState) -> RussulaResult<()> {
+impl<W: WorkflowTrait + Send> Workflow<W> {
+    pub async fn run_till(&mut self, state: WorkflowState) -> RussulaResult<()> {
         while self.poll_state(state).await?.is_pending() {
             tokio::time::sleep(self.poll_delay).await;
         }
@@ -63,12 +63,12 @@ impl<P: Protocol + Send> Endpoint<P> {
         Ok(())
     }
 
-    pub async fn poll_state(&mut self, state: ProtocolState) -> RussulaResult<Poll<()>> {
-        // Poll each peer protocol instance.
+    pub async fn poll_state(&mut self, state: WorkflowState) -> RussulaResult<Poll<()>> {
+        // Poll each peer workflow instance.
         //
         // If the peer is already in the desired state then this should be a noop.
-        for peer in self.instance_list.iter_mut() {
-            if let Err(err) = peer.protocol.poll_state(&mut peer.stream, state).await {
+        for peer in self.instances.iter_mut() {
+            if let Err(err) = peer.workflow.poll_state(&mut peer.stream, state).await {
                 if err.is_fatal() {
                     error!("{} {}", err, peer.addr);
                     panic!("{} {}", err, peer.addr);
@@ -86,10 +86,10 @@ impl<P: Protocol + Send> Endpoint<P> {
     }
 
     /// Check if all instances are at the desired state
-    fn is_state(&self, state: ProtocolState) -> bool {
-        for peer in self.instance_list.iter() {
+    fn is_state(&self, state: WorkflowState) -> bool {
+        for peer in self.instances.iter() {
             // All instance must be at the desired state
-            if !peer.protocol.is_state(state) {
+            if !peer.workflow.is_state(state) {
                 return false;
             }
         }
@@ -97,8 +97,13 @@ impl<P: Protocol + Send> Endpoint<P> {
     }
 }
 
-type SockProtocol<P> = (SocketAddr, P);
-pub struct RussulaBuilder<P: Protocol> {
+/// Build a [Workflow] that is ready to coordinate with it's peers.
+///
+/// A [Workflow] contains a list of peers it needs to coordinate with. However,
+/// since these peers can run on remote hosts and communication happens over a
+/// network, establishing a connection is fallible. The builder attempts to
+/// establish a connection with each peer, retrying transient error when possible.
+pub struct WorkflowBuilder<W: WorkflowTrait> {
     /// Address on which the Coordinator and Worker communicate on.
     ///
     /// The Coordinator gets a list of workers addrs to 'connect' to. This can
@@ -106,26 +111,26 @@ pub struct RussulaBuilder<P: Protocol> {
     /// be size = 1.
     // TODO Create different Russula struct for Coordinator/Workers to capture
     // different usage patterns.
-    protocol_addr_pair_list: Vec<SockProtocol<P>>,
+    addrs: Vec<(SocketAddr, W)>,
     poll_delay: Duration,
 }
 
-impl<P: Protocol> RussulaBuilder<P> {
-    pub fn new(peer_addr: BTreeSet<SocketAddr>, protocol: P, poll_delay: Duration) -> Self {
+impl<W: WorkflowTrait> WorkflowBuilder<W> {
+    pub fn new(peer_addr: BTreeSet<SocketAddr>, workflow: W, poll_delay: Duration) -> Self {
         // TODO if worker check that the list is len 1 and points to local addr on which to listen
-        let mut peer_list = Vec::new();
+        let mut addrs = Vec::new();
         peer_addr.into_iter().for_each(|addr| {
-            peer_list.push((addr, protocol.clone()));
+            addrs.push((addr, workflow.clone()));
         });
-        Self {
-            protocol_addr_pair_list: peer_list,
-            poll_delay,
-        }
+        Self { addrs, poll_delay }
     }
 
-    pub async fn build(self) -> RussulaResult<Endpoint<P>> {
-        let mut stream_protocol_list = Vec::new();
-        for (addr, protocol) in self.protocol_addr_pair_list.into_iter() {
+    /// Build a [Workflow]
+    ///
+    /// Attempt to establish a connection to all peers via [WorkflowTrait::pair_peer].
+    pub async fn build(self) -> RussulaResult<Workflow<W>> {
+        let mut workflow_instances = Vec::new();
+        for (addr, workflow) in self.addrs.into_iter() {
             let mut retry_attempts = CONNENT_RETRY_ATTEMPT;
             loop {
                 if retry_attempts == 0 {
@@ -133,13 +138,13 @@ impl<P: Protocol> RussulaBuilder<P> {
                         dbg: "Failed to connect to peer".to_string(),
                     });
                 }
-                match protocol.pair_peer(&addr).await {
+                match workflow.pair_peer(&addr).await {
                     Ok(connect) => {
                         info!("Coordinator: successfully connected to {}", addr);
-                        stream_protocol_list.push(ProtocolInstance {
+                        workflow_instances.push(Host {
                             addr,
                             stream: connect,
-                            protocol,
+                            workflow,
                         });
 
                         break;
@@ -162,8 +167,8 @@ impl<P: Protocol> RussulaBuilder<P> {
             }
         }
 
-        Ok(Endpoint {
-            instance_list: stream_protocol_list,
+        Ok(Workflow {
+            instances: workflow_instances,
             poll_delay: self.poll_delay,
         })
     }
