@@ -85,17 +85,17 @@ failures can happen silently. See the SSH access section for how to access remot
 ## Implementation details
 
 ### Russula
-Russula is a coordination framework where a single Coordinator can be used to drive
+Russula is a workflow framework where a single Coordinator can be used to drive
 multiple Workers. This is driven by the need to test multiple server/client incast Netbench
 scenario.
 
-At its basis an instance of Russula is composed of a pair of Coordinator/Worker Protocols. Currently
+At its basis an instance of Workflow is composed of a pair of Coordinator/Worker workflows. Currently
 its possible to create an instance of NetbenchServer and NetbenchClient, which can be used to run
 a multi server/client netbench scenario.
 
 Since Russula is used to run Netbench testing it has the following goals:
 - non-blocking: its not acceptable to block since we are trying to do performance testing
-- minimal network noise: since we are trying to measure transport protocols, the coordination workflow
+- minimal network noise: since we are trying to measure transport protocols, the workflow
 should add minimal traffic to the network
 - easily configurable: the workflow should allow for new states to allow for expanding use cases
 - secure: the workflow should not accept executable code since this opens it up for code execution attack.
