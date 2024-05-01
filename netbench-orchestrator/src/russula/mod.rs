@@ -15,7 +15,7 @@ mod workflow;
 use error::{RussulaError, RussulaResult};
 use workflow::WorkflowTrait;
 
-const CONNENT_RETRY_ATTEMPT: usize = 10;
+const CONNECT_RETRY_ATTEMPT: usize = 10;
 
 #[derive(Debug, Copy, Clone)]
 pub enum WorkflowState {
@@ -28,7 +28,7 @@ pub enum WorkflowState {
 
     /// Indicates that worker are running and accepting work.
     ///
-    /// For netbench this state be used to confirm that all servers are
+    /// For netbench this state can be used to confirm that all servers are
     /// running and accepting connection before starting netbench clients.
     /// Should only be called by Coordinators.
     WorkerRunning,
@@ -131,7 +131,7 @@ impl<W: WorkflowTrait> WorkflowBuilder<W> {
     pub async fn build(self) -> RussulaResult<Workflow<W>> {
         let mut workflow_instances = Vec::new();
         for (addr, workflow) in self.addrs.into_iter() {
-            let mut retry_attempts = CONNENT_RETRY_ATTEMPT;
+            let mut retry_attempts = CONNECT_RETRY_ATTEMPT;
             loop {
                 if retry_attempts == 0 {
                     return Err(RussulaError::NetworkConnectionRefused {

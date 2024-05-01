@@ -44,7 +44,7 @@ as part of the Orchestrator.
 
 ### Debugging
 As discussed in the above overview, there are processes that run locally and those that run
-remotely. This sections describes how to go about debugging each component.
+remotely. This section describes how to go about debugging each component.
 
 #### Local
 **Orchestrator**
