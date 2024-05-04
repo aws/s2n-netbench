@@ -185,7 +185,7 @@ mod tests {
     const POLL_DELAY_DURATION: Duration = Duration::from_secs(1);
 
     #[tokio::test]
-    async fn netbench_server_protocol() {
+    async fn netbench_server_workflow() {
         let mut worker_addrs = Vec::new();
         let mut workers = Vec::new();
         macro_rules! worker {
@@ -223,8 +223,8 @@ mod tests {
 
         let c1 = tokio::spawn(async move {
             let addr = BTreeSet::from_iter(worker_addrs);
-            let protocol = server::CoordWorkflow::new();
-            let coord = WorkflowBuilder::new(addr, protocol, POLL_DELAY_DURATION * 2);
+            let workflow = server::CoordWorkflow::new();
+            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION * 2);
             let mut coord = coord.build().await.unwrap();
             coord.run_till(WorkflowState::Ready).await.unwrap();
             coord
@@ -256,7 +256,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn netbench_client_protocol() {
+    async fn netbench_client_workflow() {
         let mut worker_addrs = Vec::new();
         let mut workers = Vec::new();
 
@@ -293,8 +293,8 @@ mod tests {
         let c1 = tokio::spawn(async move {
             let addr = BTreeSet::from_iter(worker_addrs);
 
-            let protocol = client::CoordWorkflow::new();
-            let coord = WorkflowBuilder::new(addr, protocol, POLL_DELAY_DURATION);
+            let workflow = client::CoordWorkflow::new();
+            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION);
             let mut coord = coord.build().await.unwrap();
             coord.run_till(WorkflowState::Ready).await.unwrap();
             coord
