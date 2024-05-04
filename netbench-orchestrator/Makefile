@@ -15,24 +15,30 @@
 # 					 # --placement partition \
 
 # -------------------- test russula_cli with real netbench
-# *Build netbench project (s2n-netbench root project dir):*
+#  The following scripts simulate a netbench incast test using 2 servers and 1 client.
+#
+#  First launch 2 netbench server process (worker1 and worker2) and use the coordinator to
+#  orchestrate them. Once the netbench server process is running, will launch a netbench
+#  client task manually. To finish the test, tell the coordinator to terminate the workers.
+#
+# Build netbench project (s2n-netbench root project dir):
 # `cargo build --release`
 #
-# *Launch workers (netbench-orchestrator dir):*
-# `make net_server_worker1`
-# `make net_server_worker2`
+# Launch workers (netbench-orchestrator dir):
+# `sudo make net_server_worker1`
+# `sudo make net_server_worker2`
 #
-# *Launch coordinator (netbench-orchestrator dir):*
-# `make net_server_coord`
+# Launch coordinator (netbench-orchestrator dir):
+# `sudo make net_server_coord`
 #
-# *Wait for the netbench process to start. Then launch the netbench client process (netbench-orchestrator dir):*
+# Wait for the netbench process to start. Then launch the netbench client process (netbench-orchestrator dir):
 # `./scripts/net_client.sh`
 #
 # It's possible to launch multiple runs:
-# `./scripts/net_client.sh`
-# `./scripts/net_client.sh`
+# `sudo ./scripts/net_client.sh`
+# `sudo ./scripts/net_client.sh`
 #
-# *To finish, go to the coordinator and enter any key to terminate the coordinator and workers*
+# To finish, go to the coordinator and enter any key to terminate the coordinator and workers.
 #
 net_server_coord:
 	RUST_LOG=none,orchestrator=debug,russula_cli=debug cargo run --bin russula_cli -- \
@@ -62,7 +68,7 @@ net_server_worker2:
 					 --netbench-port 8001 \
 
 
-# -------------------- test russula_cli with simulated netbench process
+# -------------------- test server russula_cli with simulated 'testing' process
 test_server_coord:
 	RUST_LOG=none,orchestrator=debug,russula_cli=debug cargo run --bin russula_cli -- \
 					 --poll-delay 1s \
@@ -85,6 +91,7 @@ test_server_worker2:
 					 --testing \
 					 --driver unused
 
+# -------------------- test client russula_cli with simulated 'testing' process
 test_client_coord:
 	RUST_LOG=none,orchestrator=debug,russula_cli=debug cargo run --bin russula_cli --  \
 					 --poll-delay 1s \
@@ -112,7 +119,3 @@ unit_test_server:
 	RUST_LOG=none,orchestrator=info cargo test  -- server --nocapture
 unit_test_client:
 	RUST_LOG=none,orchestrator=info cargo test  -- client --nocapture
-
-# -------------------- util to generate netbench report
-report:
-	s2n-netbench report net_data_* -o report.json; xclip -sel c < report.json
