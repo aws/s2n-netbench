@@ -194,7 +194,7 @@ mod tests {
                 let worker = tokio::spawn(async move {
                     let worker = WorkflowBuilder::new(
                         BTreeSet::from_iter([sock]),
-                        server::WorkerProtocol::new(
+                        server::WorkerWorkflow::new(
                             sock.port().to_string(),
                             netbench::ServerContext::testing(),
                         ),
@@ -223,7 +223,7 @@ mod tests {
 
         let c1 = tokio::spawn(async move {
             let addr = BTreeSet::from_iter(worker_addrs);
-            let protocol = server::CoordProtocol::new();
+            let protocol = server::CoordWorkflow::new();
             let coord = WorkflowBuilder::new(addr, protocol, POLL_DELAY_DURATION * 2);
             let mut coord = coord.build().await.unwrap();
             coord.run_till(WorkflowState::Ready).await.unwrap();
@@ -266,7 +266,7 @@ mod tests {
                 let worker = tokio::spawn(async move {
                     let worker = WorkflowBuilder::new(
                         BTreeSet::from_iter([sock]),
-                        client::WorkerProtocol::new(
+                        client::WorkerWorkflow::new(
                             sock.port().to_string(),
                             netbench::ClientContext::testing(),
                         ),
@@ -293,7 +293,7 @@ mod tests {
         let c1 = tokio::spawn(async move {
             let addr = BTreeSet::from_iter(worker_addrs);
 
-            let protocol = client::CoordProtocol::new();
+            let protocol = client::CoordWorkflow::new();
             let coord = WorkflowBuilder::new(addr, protocol, POLL_DELAY_DURATION);
             let mut coord = coord.build().await.unwrap();
             coord.run_till(WorkflowState::Ready).await.unwrap();

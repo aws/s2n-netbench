@@ -35,7 +35,7 @@ pub enum WorkerState {
 
 /// Worker protocol for the client
 #[derive(Clone)]
-pub struct WorkerProtocol {
+pub struct WorkerWorkflow {
     id: String,
     state: WorkerState,
     peer_state: CoordState,
@@ -43,9 +43,9 @@ pub struct WorkerProtocol {
     event_recorder: EventRecorder,
 }
 
-impl WorkerProtocol {
+impl WorkerWorkflow {
     pub fn new(id: String, netbench_ctx: ClientContext) -> Self {
-        WorkerProtocol {
+        WorkerWorkflow {
             id,
             state: WorkerState::WaitCoordInit,
             peer_state: CoordState::CheckWorker,
@@ -55,7 +55,7 @@ impl WorkerProtocol {
     }
 }
 
-impl WorkflowTrait for WorkerProtocol {
+impl WorkflowTrait for WorkerWorkflow {
     type State = WorkerState;
 
     fn name(&self) -> String {

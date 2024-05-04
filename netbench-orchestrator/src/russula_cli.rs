@@ -16,22 +16,22 @@ use tracing_subscriber::EnvFilter;
 mod russula;
 
 /// This utility is a convenient CLI wrapper around Russula and can be used to launch
-/// different protocols.
+/// different workflow.
 #[derive(StructOpt, Debug)]
 struct Opt {
     /// Russula workers and coordinators must be polled to make progress
     #[structopt(long, parse(try_from_str=parse_duration), default_value = "5s")]
     poll_delay: Duration,
 
-    /// Select which Russula protocol to start
+    /// Select which Russula workflow to start
     #[structopt(subcommand)]
-    protocol: RussulaProtocol,
+    workflow: RussulaWorkflow,
 }
 
-/// A list of different Russula protocols
+/// A list of different Russula workflow
 #[allow(clippy::enum_variant_names)]
 #[derive(StructOpt, Debug)]
-enum RussulaProtocol {
+enum RussulaWorkflow {
     NetbenchServerWorker {
         /// The port on which the Worker should 'listen' on.
         #[structopt(long)]
@@ -75,24 +75,24 @@ async fn main() {
 
     debug!("{:?}", opt);
     println!("{:?}", opt);
-    match &opt.protocol {
-        RussulaProtocol::NetbenchServerWorker { ctx, russula_port } => {
+    match &opt.workflow {
+        RussulaWorkflow::NetbenchServerWorker { ctx, russula_port } => {
             let netbench_ctx = ctx.clone();
             let russula_port = *russula_port;
             run_server_worker(opt, netbench_ctx, russula_port).await
         }
-        RussulaProtocol::NetbenchClientWorker { ctx, russula_port } => {
+        RussulaWorkflow::NetbenchClientWorker { ctx, russula_port } => {
             let netbench_ctx = ctx.clone();
             let russula_port = *russula_port;
             run_client_worker(opt, netbench_ctx, russula_port).await
         }
-        RussulaProtocol::NetbenchServerCoordinator {
+        RussulaWorkflow::NetbenchServerCoordinator {
             russula_worker_addrs,
         } => {
             let w = russula_worker_addrs.clone();
             run_local_server_coordinator(opt, w).await
         }
-        RussulaProtocol::NetbenchClientCoordinator {
+        RussulaWorkflow::NetbenchClientCoordinator {
             russula_worker_addrs,
         } => {
             let w = russula_worker_addrs.clone();
@@ -106,10 +106,10 @@ async fn main() {
 async fn run_server_worker(opt: Opt, netbench_ctx: netbench::ServerContext, russula_port: u16) {
     let uuid = uuid::Uuid::new_v4().to_string();
     let id = format!("{}-{}", uuid, netbench_ctx.trim_driver_name());
-    let protocol = server::WorkerProtocol::new(id, netbench_ctx);
+    let workflow = server::WorkerWorkflow::new(id, netbench_ctx);
     let worker = WorkflowBuilder::new(
         BTreeSet::from_iter([local_listen_addr(russula_port)]),
-        protocol,
+        workflow,
         opt.poll_delay,
     );
     let mut worker = worker.build().await.unwrap();
@@ -121,10 +121,10 @@ async fn run_server_worker(opt: Opt, netbench_ctx: netbench::ServerContext, russ
 async fn run_client_worker(opt: Opt, netbench_ctx: netbench::ClientContext, russula_port: u16) {
     let uuid = uuid::Uuid::new_v4().to_string();
     let id = format!("{}-{}", uuid, netbench_ctx.trim_driver_name());
-    let protocol = client::WorkerProtocol::new(id, netbench_ctx);
+    let workflow = client::WorkerWorkflow::new(id, netbench_ctx);
     let worker = WorkflowBuilder::new(
         BTreeSet::from_iter([local_listen_addr(russula_port)]),
-        protocol,
+        workflow,
         opt.poll_delay,
     );
     let mut worker = worker.build().await.unwrap();
@@ -134,10 +134,10 @@ async fn run_client_worker(opt: Opt, netbench_ctx: netbench::ClientContext, russ
 }
 
 async fn run_local_server_coordinator(opt: Opt, russula_worker_addrs: Vec<SocketAddr>) {
-    let protocol = server::CoordProtocol::new();
+    let workflow = server::CoordWorkflow::new();
     let coord = WorkflowBuilder::new(
         BTreeSet::from_iter(russula_worker_addrs),
-        protocol,
+        workflow,
         opt.poll_delay,
     );
     let mut coord = coord.build().await.unwrap();
@@ -155,10 +155,10 @@ async fn run_local_server_coordinator(opt: Opt, russula_worker_addrs: Vec<Socket
 }
 
 async fn run_local_client_coordinator(opt: Opt, russula_worker_addrs: Vec<SocketAddr>) {
-    let protocol = client::CoordProtocol::new();
+    let workflow = client::CoordWorkflow::new();
     let coord = WorkflowBuilder::new(
         BTreeSet::from_iter(russula_worker_addrs),
-        protocol,
+        workflow,
         opt.poll_delay,
     );
     let mut coord = coord.build().await.unwrap();

@@ -30,15 +30,15 @@ pub enum CoordState {
 
 /// Coordinator protocol for the server
 #[derive(Clone, Debug)]
-pub struct CoordProtocol {
+pub struct CoordWorkflow {
     state: CoordState,
     peer_state: WorkerState,
     event_recorder: EventRecorder,
 }
 
-impl CoordProtocol {
+impl CoordWorkflow {
     pub fn new() -> Self {
-        CoordProtocol {
+        CoordWorkflow {
             state: CoordState::CheckWorker,
             peer_state: WorkerState::WaitCoordInit,
             event_recorder: EventRecorder::default(),
@@ -46,7 +46,7 @@ impl CoordProtocol {
     }
 }
 
-impl WorkflowTrait for CoordProtocol {
+impl WorkflowTrait for CoordWorkflow {
     type State = CoordState;
     fn name(&self) -> String {
         format!("server-c-{}", 0)

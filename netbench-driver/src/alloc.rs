@@ -15,6 +15,12 @@ impl Allocator {
     }
 }
 
+impl Default for Allocator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[inline(never)]
 #[allow(unused_variables)]
 fn alloc(size: usize) {
