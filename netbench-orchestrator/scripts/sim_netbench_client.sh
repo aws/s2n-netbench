@@ -2,8 +2,8 @@
 
 # Test program to simulate a netbench client run.
 #
-# The process echos an incrementing counter for some duration and
-# then terminates.
+# Echos an incrementing counter, self-terminating after some
+# duration.
 
 [[ -z "$1" ]] && { echo "Please specify an 'id'" ; exit 1; }
 

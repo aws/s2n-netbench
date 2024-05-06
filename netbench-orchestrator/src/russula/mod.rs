@@ -243,7 +243,7 @@ mod tests {
             .unwrap()
             .is_pending()
         {
-            println!("poll state: Done");
+            println!("continue to poll till: Done");
         }
 
         {
@@ -311,7 +311,7 @@ mod tests {
             .unwrap()
             .is_pending()
         {
-            println!("poll state: Done");
+            println!("continue to poll till: Done");
         }
 
         {

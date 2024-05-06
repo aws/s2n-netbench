@@ -145,7 +145,7 @@ impl WorkflowTrait for WorkerWorkflow {
 
                 let pid = child.id();
                 debug!(
-                    "{}----------------------------child id {}",
+                    "{} child id {}",
                     self.name(),
                     pid
                 );
@@ -164,11 +164,11 @@ impl WorkflowTrait for WorkerWorkflow {
                 if system.refresh_process(pid) {
                     let process = system.process(pid).unwrap();
                     let kill = process.kill();
-                    debug!("did KILL pid: {} {}----------------------------", pid, kill);
+                    debug!("did KILL pid: {} {}", pid, kill);
                 } else {
                     // log an error but continue since the process is not gone
                     error!(
-                        "netbench process not found. pid: {} ----------------------------",
+                        "netbench process not found. pid: {}",
                         pid
                     );
                 }

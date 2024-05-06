@@ -51,7 +51,7 @@ impl WorkflowTrait for CoordWorkflow {
     }
 
     async fn pair_peer(&self, addr: &SocketAddr) -> RussulaResult<TcpStream> {
-        info!("--- Coordinator: attempt to connect on: {}", addr);
+        info!("Coordinator: attempt to connect on: {}", addr);
 
         let connect = TcpStream::connect(addr).await.map_err(RussulaError::from)?;
         Ok(connect)

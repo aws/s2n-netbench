@@ -2,8 +2,8 @@
 
 # Test program to simulate a netbench server run.
 #
-# The process echos an incrementing counter value until it is
-# terminated.
+# Continue to echo an incrementing counter value until the
+# process is killed.
 
 [[ -z "$1" ]] && { echo "Please specify an 'id'" ; exit 1; }
 

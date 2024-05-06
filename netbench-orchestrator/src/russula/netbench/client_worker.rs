@@ -145,7 +145,7 @@ impl WorkflowTrait for WorkerWorkflow {
 
                 let pid = child.id();
                 debug!(
-                    "{}----------------------------child id {}",
+                    "{} child id {}",
                     self.name(),
                     pid
                 );
@@ -166,7 +166,7 @@ impl WorkflowTrait for WorkerWorkflow {
                 let process = system.process(pid);
                 if let Some(process) = process {
                     debug!(
-                        "process still RUNNING! pid: {} status: {:?} ----------------------------",
+                        "process still RUNNING! pid: {} status: {:?}",
                         process.pid(),
                         process.status()
                     );
@@ -188,7 +188,7 @@ impl WorkflowTrait for WorkerWorkflow {
                     }
                 } else {
                     info!(
-                        "Process COMPLETED! pid: {} ----------------------------",
+                        "Process COMPLETED! pid: {}",
                         pid
                     );
 
