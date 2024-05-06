@@ -27,8 +27,14 @@ pub enum WorkerState {
     WaitCoordInit,
     Ready,
     Run,
-    RunningAwaitKill(#[serde(skip)] u32),
-    Killing(#[serde(skip)] u32),
+    RunningAwaitKill(
+        // netbench server process id
+        #[serde(skip)] u32,
+    ),
+    Killing(
+        // netbench server process id
+        #[serde(skip)] u32,
+    ),
     Stopped,
     Done,
 }
@@ -144,11 +150,7 @@ impl WorkflowTrait for WorkerWorkflow {
                 };
 
                 let pid = child.id();
-                debug!(
-                    "{} child id {}",
-                    self.name(),
-                    pid
-                );
+                debug!("{} child id {}", self.name(), pid);
 
                 *self.state_mut() = WorkerState::RunningAwaitKill(pid);
                 Ok(None)
@@ -167,10 +169,7 @@ impl WorkflowTrait for WorkerWorkflow {
                     debug!("did KILL pid: {} {}", pid, kill);
                 } else {
                     // log an error but continue since the process is not gone
-                    error!(
-                        "netbench process not found. pid: {}",
-                        pid
-                    );
+                    error!("netbench process not found. pid: {}", pid);
                 }
 
                 self.transition_self_or_user_driven(stream).await?;

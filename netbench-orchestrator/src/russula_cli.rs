@@ -74,7 +74,6 @@ async fn main() {
         .init();
 
     debug!("{:?}", opt);
-    println!("{:?}", opt);
     match &opt.workflow {
         RussulaWorkflow::NetbenchServerWorker { ctx, russula_port } => {
             let netbench_ctx = ctx.clone();

@@ -184,6 +184,7 @@ mod tests {
 
     const POLL_DELAY_DURATION: Duration = Duration::from_secs(1);
 
+    // Run netbench server specific workflow with multiple workers.
     #[tokio::test]
     async fn netbench_server_workflow() {
         let mut worker_addrs = Vec::new();
@@ -224,7 +225,7 @@ mod tests {
         let c1 = tokio::spawn(async move {
             let addr = BTreeSet::from_iter(worker_addrs);
             let workflow = server::CoordWorkflow::new();
-            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION * 2);
+            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION);
             let mut coord = coord.build().await.unwrap();
             coord.run_till(WorkflowState::Ready).await.unwrap();
             coord
@@ -255,6 +256,7 @@ mod tests {
         }
     }
 
+    // Run netbench client specific workflow with multiple workers.
     #[tokio::test]
     async fn netbench_client_workflow() {
         let mut worker_addrs = Vec::new();

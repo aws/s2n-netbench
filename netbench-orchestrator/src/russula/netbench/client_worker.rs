@@ -27,8 +27,14 @@ pub enum WorkerState {
     WaitCoordInit,
     Ready,
     Run,
-    Running(#[serde(skip)] u32),
-    RunningAwaitComplete(#[serde(skip)] u32),
+    Running(
+        // netbench client process id
+        #[serde(skip)] u32,
+    ),
+    RunningAwaitComplete(
+        // netbench client process id
+        #[serde(skip)] u32,
+    ),
     Stopped,
     Done,
 }
@@ -144,11 +150,7 @@ impl WorkflowTrait for WorkerWorkflow {
                 };
 
                 let pid = child.id();
-                debug!(
-                    "{} child id {}",
-                    self.name(),
-                    pid
-                );
+                debug!("{} child id {}", self.name(), pid);
 
                 *self.state_mut() = WorkerState::Running(pid);
                 Ok(None)
@@ -171,14 +173,7 @@ impl WorkflowTrait for WorkerWorkflow {
                         process.status()
                     );
                     // FIXME somethings is causing the collector to become a Zombie process.
-                    //
-                    // We can detect the zombie process and continue with Russula shutdown, which
-                    // causes the process to be killed. This indicates that Russula is possibly
-                    // preventing a clean close of the collector.
-                    //
-                    // root       54245  Sl ./target/debug/russula_cli --protocol NetbenchClientWorker --port 9000 --peer-list 54.198.168.151:4433
-                    // root       54688  Z  [netbench-collec] <defunct>
-
+                    // https://github.com/aws/s2n-netbench/issues/34
                     if let sysinfo::ProcessStatus::Zombie = process.status() {
                         warn!(
                             "Process pid: {} is a Zombie.. ignoring and continuing",
@@ -187,10 +182,7 @@ impl WorkflowTrait for WorkerWorkflow {
                         self.transition_self_or_user_driven(stream).await?;
                     }
                 } else {
-                    info!(
-                        "Process COMPLETED! pid: {}",
-                        pid
-                    );
+                    info!("Process COMPLETED! pid: {}", pid);
 
                     self.transition_self_or_user_driven(stream).await?;
                 }

@@ -16,6 +16,8 @@
 
 # -------------------- test russula_cli with real netbench
 #  The following scripts simulate a netbench incast test using 2 servers and 1 client.
+#  See scripts/sim_netbench_server.sh and scripts/sim_netbench_client.sh for more
+#  details about the simulated program.
 #
 #  First launch 2 netbench server process (worker1 and worker2) and use the coordinator to
 #  orchestrate them. Once the netbench server process is running, will launch a netbench
