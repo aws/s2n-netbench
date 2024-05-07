@@ -26,6 +26,9 @@
 # Build netbench project (s2n-netbench root project dir):
 # `cargo build --release`
 #
+# Generate incast scenario (s2n-netbench root project dir):
+# `./target/release/s2n-netbench-scenarios --request_response.servers 2 --request_response.response_size 2GB --request_response.request_size 25B`
+#
 # Launch workers (netbench-orchestrator dir):
 # `sudo make net_server_worker1`
 # `sudo make net_server_worker2`
@@ -56,7 +59,7 @@ net_server_worker1:
 					 --russula-port 7000 \
 					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
+					 --scenario ../s2n-netbench/request_response.json \
 					 --netbench-port 7001 \
 
 net_server_worker2:
@@ -66,7 +69,7 @@ net_server_worker2:
 					 --russula-port 8000 \
 					 --netbench-path ../target/release \
 					 --driver s2n-netbench-driver-server-s2n-quic \
-					 --scenario ../../netbench-orchestrator/scripts/request_response_multi_2_incast_1GB_req_resp.json \
+					 --scenario ../s2n-netbench/request_response.json \
 					 --netbench-port 8001 \
 
 
