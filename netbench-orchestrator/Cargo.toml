@@ -9,21 +9,26 @@ rust-version = "1.75"
 license = "Apache-2.0"
 
 [[bin]]
+name = "s2n-netbench-orchestrator"
+path = "src/main.rs"
+
+[[bin]]
 name = "russula_cli"
 path = "src/russula_cli.rs"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
+aws-sdk-s3 = "1"
 bytes = "1"
-uuid = { version = "1", features = ["v4"] }
+humantime = "2"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
+structopt = { version = "0.3", default-features = false }
+sysinfo = "0.29"
+tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
-structopt = { version = "0.3", default-features = false }
-humantime = "2"
-sysinfo = "0.29"
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 futures = "0.3"
