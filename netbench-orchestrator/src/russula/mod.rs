@@ -8,6 +8,7 @@ use tracing::{error, info};
 
 mod error;
 mod event;
+pub mod netbench;
 mod network_utils;
 mod states;
 mod workflow;
@@ -171,5 +172,156 @@ impl<W: WorkflowTrait> WorkflowBuilder<W> {
             instances: workflow_instances,
             poll_delay: self.poll_delay,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::russula::netbench::{client, server};
+    use futures::future::join_all;
+    use std::str::FromStr;
+
+    const POLL_DELAY_DURATION: Duration = Duration::from_secs(1);
+
+    // Run netbench server specific workflow with multiple workers.
+    #[tokio::test]
+    async fn netbench_server_workflow() {
+        let mut worker_addrs = Vec::new();
+        let mut workers = Vec::new();
+        macro_rules! worker {
+            {$port:literal} => {
+                let sock = SocketAddr::from_str(&format!("127.0.0.1:{}", $port)).unwrap();
+                let worker = tokio::spawn(async move {
+                    let worker = WorkflowBuilder::new(
+                        BTreeSet::from_iter([sock]),
+                        server::WorkerWorkflow::new(
+                            sock.port().to_string(),
+                            netbench::ServerContext::testing(),
+                        ),
+                        POLL_DELAY_DURATION,
+                    );
+                    let mut worker = worker.build().await.unwrap();
+                    worker
+                        .run_till(WorkflowState::Done)
+                        .await
+                        .unwrap();
+                    worker
+                });
+
+                workers.push(worker);
+                worker_addrs.push(sock);
+            };
+        }
+
+        worker!(8001);
+        worker!(8002);
+        worker!(8003);
+        worker!(8004);
+        worker!(8005);
+        worker!(8006);
+        worker!(8007);
+
+        let c1 = tokio::spawn(async move {
+            let addr = BTreeSet::from_iter(worker_addrs);
+            let workflow = server::CoordWorkflow::new();
+            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION);
+            let mut coord = coord.build().await.unwrap();
+            coord.run_till(WorkflowState::Ready).await.unwrap();
+            coord
+        });
+        let join = tokio::join!(c1);
+        let mut coord = join.0.unwrap();
+        {
+            coord.run_till(WorkflowState::WorkerRunning).await.unwrap();
+            let simulate_run_time = Duration::from_secs(5);
+            tokio::time::sleep(simulate_run_time).await;
+        }
+
+        while coord
+            .poll_state(WorkflowState::Done)
+            .await
+            .unwrap()
+            .is_pending()
+        {
+            println!("continue to poll till: Done");
+        }
+
+        {
+            let worker_join = join_all(workers).await;
+            println!("workers done");
+            for w in worker_join {
+                assert!(w.unwrap().is_state(WorkflowState::Done));
+            }
+        }
+    }
+
+    // Run netbench client specific workflow with multiple workers.
+    #[tokio::test]
+    async fn netbench_client_workflow() {
+        let mut worker_addrs = Vec::new();
+        let mut workers = Vec::new();
+
+        macro_rules! worker {
+            {$port:literal} => {
+                let sock = SocketAddr::from_str(&format!("127.0.0.1:{}", $port)).unwrap();
+                let worker = tokio::spawn(async move {
+                    let worker = WorkflowBuilder::new(
+                        BTreeSet::from_iter([sock]),
+                        client::WorkerWorkflow::new(
+                            sock.port().to_string(),
+                            netbench::ClientContext::testing(),
+                        ),
+                        POLL_DELAY_DURATION,
+                    );
+                    let mut worker = worker.build().await.unwrap();
+                    worker
+                        .run_till(WorkflowState::Done)
+                        .await
+                        .unwrap();
+                    worker
+                });
+
+                workers.push(worker);
+                worker_addrs.push(sock);
+            };
+        }
+
+        worker!(9001);
+        worker!(9002);
+        worker!(9003);
+        worker!(9004);
+
+        let c1 = tokio::spawn(async move {
+            let addr = BTreeSet::from_iter(worker_addrs);
+
+            let workflow = client::CoordWorkflow::new();
+            let coord = WorkflowBuilder::new(addr, workflow, POLL_DELAY_DURATION);
+            let mut coord = coord.build().await.unwrap();
+            coord.run_till(WorkflowState::Ready).await.unwrap();
+            coord
+        });
+        let join = tokio::join!(c1);
+        let mut coord = join.0.unwrap();
+        {
+            coord.run_till(WorkflowState::WorkerRunning).await.unwrap();
+        }
+
+        while coord
+            .poll_state(WorkflowState::Done)
+            .await
+            .unwrap()
+            .is_pending()
+        {
+            println!("continue to poll till: Done");
+        }
+
+        {
+            let worker_join = join_all(workers).await;
+            println!("worker done");
+            for w in worker_join {
+                assert!(w.unwrap().is_state(WorkflowState::Done));
+            }
+        }
     }
 }
