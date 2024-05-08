@@ -31,17 +31,25 @@ struct CdkResources {
     // CloudWatch log group name
     output_netbench_runner_log_group: String,
     // public netbench s3 bucket
+    //
+    // Used for storing artifacts for the orchestrator and netbench runs
     output_netbench_runner_public_logs_bucket: String,
     // private netbench s3 bucket
+    //
+    // Used for storing source based netbench drivers which could be private
     output_netbench_runner_private_src_bucket: String,
-    // CloudFront stack name
+    // CloudFront stack which serves the netbench reports
     output_netbench_cloudfront_distribution: String,
     // EC2 instance profile for orchestrator hosts
     output_netbench_runner_instance_profile: String,
     // Subnet tag/key values
+    //
+    // The orchestrator supports multi-AZ runs and expects the a provisioned
+    // subnet per AZ. We discover these subnets via a tag key/value pair, which
+    // should be the same for all Subnets.
     output_netbench_subnet_tag_key: String,
     output_netbench_subnet_tag_value: String,
-    // AWS region where the netbench orchestrator will be running
+    // AWS region where the netbench orchestrator will run
     output_netbench_infra_primary_prod_region: String,
 }
 
