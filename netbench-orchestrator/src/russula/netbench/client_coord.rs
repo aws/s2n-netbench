@@ -6,8 +6,7 @@ use crate::russula::{
     event::EventRecorder,
     netbench::client::WorkerState,
     network_utils::Msg,
-    states::StateApi,
-    states::TransitionStep,
+    states::{StateApi, TransitionStep},
     workflow::WorkflowTrait,
 };
 use core::fmt::Debug;

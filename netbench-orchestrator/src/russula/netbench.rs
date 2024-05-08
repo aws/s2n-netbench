@@ -141,8 +141,7 @@ impl ClientContext {
 // clippy complains about unused import since they are used by different bin
 #[allow(unused_imports)]
 pub mod server {
-    pub use super::server_coord::CoordWorkflow;
-    pub use super::server_worker::WorkerWorkflow;
+    pub use super::{server_coord::CoordWorkflow, server_worker::WorkerWorkflow};
 }
 
 // CheckWorker   --------->  WaitCoordInit
@@ -180,6 +179,8 @@ pub mod server {
 // clippy complains about unused import since they are used by different bin
 #[allow(unused_imports)]
 pub mod client {
-    pub use super::client_coord::{CoordState, CoordWorkflow};
-    pub use super::client_worker::{WorkerState, WorkerWorkflow};
+    pub use super::{
+        client_coord::{CoordState, CoordWorkflow},
+        client_worker::{WorkerState, WorkerWorkflow},
+    };
 }

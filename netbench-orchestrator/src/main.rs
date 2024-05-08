@@ -6,8 +6,10 @@
 
 use crate::orchestrator::OrchResult;
 
+mod ec2_utils;
 mod orchestrator;
 mod s3_utils;
+mod ssm_utils;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> OrchResult<()> {
