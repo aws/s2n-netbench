@@ -28,13 +28,20 @@ pub struct CdkConfig {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 struct CdkResources {
+    // CloudWatch log group name
     output_netbench_runner_log_group: String,
+    // public netbench s3 bucket
     output_netbench_runner_public_logs_bucket: String,
+    // private netbench s3 bucket
     output_netbench_runner_private_src_bucket: String,
+    // CloudFront stack name
     output_netbench_cloudfront_distribution: String,
+    // EC2 instance profile for orchestrator hosts
     output_netbench_runner_instance_profile: String,
+    // Subnet tag/key values
     output_netbench_subnet_tag_key: String,
     output_netbench_subnet_tag_value: String,
+    // AWS region where the netbench orchestrator will be running
     output_netbench_infra_primary_prod_region: String,
 }
 
@@ -99,6 +106,8 @@ impl CdkConfig {
     }
 
     pub fn netbench_runner_subnet_tag_key(&self) -> String {
+        // https://docs.rs/aws-sdk-ec2/latest/aws_sdk_ec2/operation/describe_subnets/builders/struct.DescribeSubnetsFluentBuilder.html#method.filters
+        // "EC2 api requires the `tag:` prefix when specifying tags"
         format!("tag:{}", self.resources.output_netbench_subnet_tag_key)
     }
 

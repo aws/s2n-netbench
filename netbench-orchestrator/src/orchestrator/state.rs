@@ -66,7 +66,7 @@ impl State {
     }
 
     pub fn cargo_path(&self) -> String {
-        format!("{}/bin/cargo", self.host_home_path)
+        format!("{}/cargo", self.host_bin_path())
     }
 
     pub fn security_group_name(&self, unique_id: &str) -> String {

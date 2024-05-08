@@ -63,12 +63,19 @@ impl Step {
 }
 
 pub async fn send_command(
+    // Steps to wait for before running the current Step
     wait_steps: Vec<Step>,
+    // The current Step identifier
     curr_step: Step,
+    // String useful for displaying and debugging
     comment: &str,
+    // sm sdk client
     ssm_client: &aws_sdk_ssm::Client,
+    // EC2 instance Ids
     ids: Vec<String>,
+    // The ssm commands to execute
     commands: Vec<String>,
+    // Orchestrator config object for this run
     config: &OrchestratorConfig,
 ) -> Option<SendCommandOutput> {
     // SSM executes commands asynchronously on remote hosts, and doesn't have
