@@ -17,12 +17,12 @@ name = "russula_cli"
 path = "src/russula_cli.rs"
 
 [dependencies]
-aws-types = "1.1"
-aws-config = "1.1"
-aws-sdk-ec2 = { version = "1.22", features = [] }
-aws-sdk-s3 = "1.17"
-aws-sdk-iam = "1.15"
-aws-sdk-ssm = "1.17"
+aws-types = "1"
+aws-config = "1"
+aws-sdk-ec2 = { version = "1", features = [] }
+aws-sdk-s3 = "1"
+aws-sdk-iam = "1"
+aws-sdk-ssm = "1"
 bytes = "1"
 clap = { version = "4", features = ["derive"] }
 humantime = "2"

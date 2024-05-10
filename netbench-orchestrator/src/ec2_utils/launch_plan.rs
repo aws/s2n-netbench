@@ -13,6 +13,8 @@ use aws_sdk_ec2::types::Instance;
 use std::{collections::HashMap, time::Duration};
 use tracing::debug;
 
+const WAIT_INSTANCE_LAUNCH: Duration = Duration::from_secs(10);
+
 pub type NetworkingInfraDetail = HashMap<Az, SubnetId>;
 
 // A collection of components necessary to launch all infrastructure
@@ -93,7 +95,7 @@ impl<'a> LaunchPlan<'a> {
         networking::set_routing_permissions(ec2_client, &infra).await?;
 
         // wait for instance to spawn
-        tokio::time::sleep(Duration::from_secs(10)).await;
+        tokio::time::sleep(WAIT_INSTANCE_LAUNCH).await;
 
         Ok(infra)
     }

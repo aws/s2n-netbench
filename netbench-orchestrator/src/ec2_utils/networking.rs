@@ -31,7 +31,7 @@ pub async fn set_routing_permissions(
         .authorize_security_group_egress()
         .group_id(security_group_id.clone())
         .ip_permissions(
-            // Authorize SG (all traffic within the same SG)
+            // Authorize security group (all traffic within the same security group)
             IpPermission::builder()
                 .from_port(-1)
                 .to_port(-1)
@@ -66,7 +66,7 @@ pub async fn set_routing_permissions(
         .authorize_security_group_ingress()
         .group_id(security_group_id.clone())
         .ip_permissions(
-            // Authorize SG (all traffic within the same SG)
+            // Authorize security group (all traffic within the same security group)
             IpPermission::builder()
                 .from_port(-1)
                 .to_port(-1)

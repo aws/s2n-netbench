@@ -14,7 +14,7 @@ use aws_sdk_ec2::types::{
     ResourceType, ShutdownBehavior, Tag, TagSpecification,
 };
 use std::{collections::HashMap, net::IpAddr, str::FromStr, time::Duration};
-use tracing::info;
+use tracing::{debug, info};
 
 pub async fn launch_instances(
     ec2_client: &aws_sdk_ec2::Client,
@@ -101,30 +101,16 @@ fn instance_name(unique_id: &str, endpoint_type: EndpointType) -> String {
     format!("{}_{}", endpoint_type.as_str().to_lowercase(), unique_id)
 }
 
-pub async fn delete_instances(
-    ec2_client: &aws_sdk_ec2::Client,
-    ids: Vec<String>,
-) -> OrchResult<()> {
-    ec2_client
-        .terminate_instances()
-        .set_instance_ids(Some(ids))
-        .send()
-        .await
-        .map_err(|err| OrchError::Ec2 {
-            dbg: err.to_string(),
-        })?;
-    Ok(())
-}
-
+// Wait for running state
 pub async fn poll_running(
     ec2_client: &aws_sdk_ec2::Client,
     instance: &Instance,
     launch_cnt: usize,
     endpoint_type: &EndpointType,
 ) -> OrchResult<HostIps> {
-    // Wait for running state
     let mut actual_instance_state = InstanceStateName::Pending;
     let mut host_ip = None;
+    let mut attempt = 1;
     while actual_instance_state != InstanceStateName::Running {
         let instance_id = instance.instance_id().expect("describe_instances failed");
         let result = ec2_client
@@ -160,6 +146,8 @@ pub async fn poll_running(
             .expect("Failed to get instance state")
             .clone();
 
+        debug!("poll attempt: {:?}", attempt);
+        attempt += 1;
         info!(
             "{:?} {} state: {:?}",
             endpoint_type, launch_cnt, actual_instance_state
@@ -168,7 +156,7 @@ pub async fn poll_running(
     }
 
     host_ip.ok_or(OrchError::Ec2 {
-        dbg: "".to_string(),
+        dbg: "Failed to launch EC2 host".to_string(),
     })
 }
 

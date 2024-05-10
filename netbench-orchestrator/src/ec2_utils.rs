@@ -29,7 +29,9 @@ pub struct InfraDetail {
 
 impl InfraDetail {
     pub async fn cleanup(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
+        // instances must be deleted before other infra
         self.delete_instances(ec2_client).await?;
+
         self.delete_placement_group(ec2_client).await?;
         // generally takes a long time so attempt this last
         self.delete_security_group(ec2_client).await?;
@@ -61,7 +63,6 @@ impl InfraDetail {
 impl InfraDetail {
     async fn delete_instances(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting instances");
-        println!("Start: deleting instances");
         let ids: Vec<String> = self
             .servers
             .iter()
@@ -69,13 +70,20 @@ impl InfraDetail {
             .map(|instance| instance.instance_id().to_string())
             .collect();
 
-        instance::delete_instances(ec2_client, ids).await?;
+        ec2_client
+            .terminate_instances()
+            .set_instance_ids(Some(ids))
+            .send()
+            .await
+            .map_err(|err| OrchError::Ec2 {
+                dbg: err.to_string(),
+            })?;
+
         Ok(())
     }
 
     async fn delete_security_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting security groups");
-        println!("Start: deleting security groups");
 
         let mut deleted_sec_group = ec2_client
             .delete_security_group()
@@ -108,7 +116,6 @@ impl InfraDetail {
 
     async fn delete_placement_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting placement groups");
-        println!("Start: deleting placement groups");
 
         for (_az, placement_group) in self.placement_map.iter() {
             let mut retries = RETRY_COUNT;
@@ -132,36 +139,6 @@ impl InfraDetail {
                     .group_name(placement_group_name)
                     .send()
                     .await;
-
-                retries -= 1;
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn delete_with_retry<F: Fn(&aws_sdk_ec2::Client) -> OrchResult<()>>(
-        &self,
-        ec2_client: &aws_sdk_ec2::Client,
-        f: F,
-    ) -> OrchResult<()> {
-        info!("Start: deleting placement groups");
-        println!("Start: deleting placement groups");
-
-        for (_az, placement_group) in self.placement_map.iter() {
-            let mut retries = RETRY_COUNT;
-
-            let placement_group_name = placement_group.group_name().ok_or(OrchError::Ec2 {
-                dbg: "Failed to get placement_group name".to_string(),
-            })?;
-            debug!("Start: deleting placement group: {placement_group_name}");
-
-            let mut opt = f(ec2_client);
-
-            while opt.is_err() && retries > 0 {
-                debug!("deleting placement group. retry {retries}");
-                tokio::time::sleep(RETRY_BACKOFF).await;
-                opt = f(ec2_client);
 
                 retries -= 1;
             }
