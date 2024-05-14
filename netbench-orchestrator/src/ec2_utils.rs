@@ -90,27 +90,26 @@ impl InfraDetail {
     async fn delete_security_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting security groups");
 
-        let mut retries = 0;
-        while retries < MAX_RETRY_COUNT {
+        let mut attempt = 0;
+        while attempt < MAX_RETRY_COUNT {
+            attempt += 1;
             let delete_security_group = ec2_client
                 .delete_security_group()
                 .group_id(self.security_group_id.to_string())
                 .send()
                 .await;
             debug!(
-                "deleting security group. retry {retries}. result: {:?}",
+                "deleting security group. attempt: {attempt}. result: {:?}",
                 delete_security_group
             );
 
             match delete_security_group {
-                Ok(_) => return Ok(()),
+                Ok(_) => break,
                 Err(SdkError::ServiceError(service_err))
                     if service_err.err().meta().code() == Some("DependencyViolation") =>
                 {
                     // retryable error
-                    retries += 1;
                     tokio::time::sleep(RETRY_BACKOFF).await;
-                    continue;
                 }
                 Err(err) => {
                     // non-retryable error
@@ -120,12 +119,16 @@ impl InfraDetail {
                     });
                 }
             }
+
+            if attempt == MAX_RETRY_COUNT {
+                error!("abort deleting security group {}", self.security_group_id);
+                return Err(OrchError::Ec2 {
+                    dbg: "Failed to delete security group because it's still in use".to_string(),
+                });
+            }
         }
 
-        error!("abort deleting security group {}", self.security_group_id);
-        Err(OrchError::Ec2 {
-            dbg: "Failed to delete security group because it's still in use".to_string(),
-        })
+        Ok(())
     }
 
     // Attempt to delete the Placement Group.
@@ -135,34 +138,32 @@ impl InfraDetail {
     // EC2 host is fully cleaned up.
     async fn delete_placement_group(&self, ec2_client: &aws_sdk_ec2::Client) -> OrchResult<()> {
         info!("Start: deleting placement groups");
-
         for (_az, placement_group) in self.placement_map.iter() {
             let placement_group_name = placement_group.group_name().ok_or(OrchError::Ec2 {
                 dbg: "Failed to get placement_group name".to_string(),
             })?;
 
-            let mut retries = 0;
-            while retries < MAX_RETRY_COUNT {
+            let mut attempt = 0;
+            while attempt < MAX_RETRY_COUNT {
+                attempt += 1;
                 let delete_placement_group = ec2_client
                     .delete_placement_group()
                     .group_name(placement_group_name)
                     .send()
                     .await;
                 debug!(
-                    "deleting placement group. retry {retries}. \nresult: {:?}",
+                    "deleting placement group. attempt: {attempt}. \nresult: {:?}",
                     delete_placement_group
                 );
 
                 match delete_placement_group {
-                    Ok(_) => return Ok(()),
+                    Ok(_) => break,
                     Err(SdkError::ServiceError(service_err))
                         if service_err.err().meta().code()
                             == Some("InvalidPlacementGroup.InUse") =>
                     {
                         // retryable error
-                        retries += 1;
                         tokio::time::sleep(RETRY_BACKOFF).await;
-                        continue;
                     }
                     Err(err) => {
                         // non-retryable error
@@ -172,12 +173,17 @@ impl InfraDetail {
                         });
                     }
                 }
+
+                if attempt == MAX_RETRY_COUNT {
+                    error!("abort deleting placement groups");
+                    return Err(OrchError::Ec2 {
+                        dbg: "Failed to delete placement group because it's still in-use"
+                            .to_string(),
+                    });
+                }
             }
         }
 
-        error!("abort deleting placement groups");
-        Err(OrchError::Ec2 {
-            dbg: "Failed to delete placement group because it's still in-use".to_string(),
-        })
+        Ok(())
     }
 }
