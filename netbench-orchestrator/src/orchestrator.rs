@@ -130,19 +130,23 @@ async fn run_netbench(
     unique_id: &str,
 ) -> OrchResult<()> {
     if matches!(run_mode, RunMode::Full) {
+        // TODO: investigate native_tls_driver failure
+        //
+        // `native_tls_driver` can get stuck and results in the orchestrator
+        // never finishing.
+        // https://github.com/aws/s2n-netbench/issues/37
+
         let server_drivers = vec![
             ssm_utils::s2n_quic_dc_driver::dc_quic_server_driver(unique_id, config),
             ssm_utils::tcp_driver_crates::tcp_server_driver(),
             ssm_utils::s2n_quic_driver_crates::s2n_quic_server_driver(),
             ssm_utils::s2n_tls_driver::s2n_tls_server_driver(),
-            // ssm_utils::native_tls_driver::native_tls_server_driver(),
         ];
         let client_drivers = vec![
             ssm_utils::s2n_quic_dc_driver::dc_quic_client_driver(unique_id, config),
             ssm_utils::tcp_driver_crates::tcp_client_driver(),
             ssm_utils::s2n_quic_driver_crates::s2n_quic_client_driver(),
             ssm_utils::s2n_tls_driver::s2n_tls_client_driver(),
-            // ssm_utils::native_tls_driver::native_tls_client_driver(),
         ];
 
         assert_eq!(server_drivers.len(), client_drivers.len());
