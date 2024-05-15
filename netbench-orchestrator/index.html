@@ -58,7 +58,8 @@
         let update_finished = update("template_finished_prefix", "finished")(0);
     }}
     function load() {{
-        setInterval(updateAll(), 30000);
+        <!-- units in milliseconds -->
+        setInterval(updateAll(), 5000);
     }}
     </script>
   </body>

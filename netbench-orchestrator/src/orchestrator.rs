@@ -8,7 +8,7 @@ mod report;
 mod state;
 
 use crate::{
-    ec2_utils, ec2_utils::InfraDetail, s3_utils, ssm_utils, ssm_utils::NetbenchDriverType,
+    ec2_utils, ec2_utils::InfraDetail, s3_utils, ssm_utils, ssm_utils::NetbenchDriverType, RunMode,
 };
 use aws_sdk_s3::primitives::ByteStream;
 use tracing::info;
@@ -16,16 +16,6 @@ use tracing::info;
 pub use cli::{Cli, HostConfig, OrchestratorConfig};
 pub use error::{OrchError, OrchResult};
 pub use state::STATE;
-
-#[allow(dead_code)]
-pub enum RunMode {
-    // Skip the netbench run.
-    //
-    // Useful for testing infrastructure setup.
-    TestInfra,
-
-    Full,
-}
 
 pub async fn run(
     unique_id: String,

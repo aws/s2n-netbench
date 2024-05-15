@@ -6,15 +6,11 @@ use std::path::PathBuf;
 
 #[allow(dead_code)]
 pub mod native_tls_driver;
-#[allow(dead_code)]
 pub mod s2n_quic_dc_driver;
-#[allow(dead_code)]
 pub mod s2n_quic_driver_crates;
 #[allow(dead_code)]
 pub mod s2n_quic_driver_github;
-#[allow(dead_code)]
 pub mod s2n_tls_driver;
-#[allow(dead_code)]
 pub mod tcp_driver_crates;
 #[allow(dead_code)]
 pub mod tcp_driver_github;
