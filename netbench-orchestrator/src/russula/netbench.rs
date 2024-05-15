@@ -73,6 +73,7 @@ impl ServerContext {
         }
     }
 
+    #[allow(dead_code)]
     pub fn trim_driver_name(&self) -> String {
         self.driver
             .trim_start_matches("s2n-netbench-driver-")
@@ -94,6 +95,7 @@ impl ClientContext {
         }
     }
 
+    #[allow(dead_code)]
     pub fn trim_driver_name(&self) -> String {
         self.driver
             .trim_start_matches("s2n-netbench-driver-")

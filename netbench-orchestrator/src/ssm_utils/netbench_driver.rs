@@ -4,14 +4,18 @@
 use crate::orchestrator::STATE;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 pub mod native_tls_driver;
 pub mod s2n_quic_dc_driver;
 pub mod s2n_quic_driver_crates;
+#[allow(dead_code)]
 pub mod s2n_quic_driver_github;
 pub mod s2n_tls_driver;
 pub mod tcp_driver_crates;
+#[allow(dead_code)]
 pub mod tcp_driver_github;
 
+#[allow(dead_code)]
 pub enum NetbenchDriverType {
     GithubRustProj(GithubRustSource),
     CratesIo(CrateIoSource),
@@ -37,6 +41,7 @@ pub struct CrateIoSource {
     pub krate: String,
     pub driver_name: String,
     // TODO use version
+    #[allow(dead_code)]
     version: String,
 }
 

@@ -19,6 +19,8 @@ pub struct Cli {
     cdk_config_file: PathBuf,
 
     /// Path to the scenario file
+    ///
+    /// eg. "../target/s2n-netbench/request_response.json"
     #[arg(long)]
     netbench_scenario_file: PathBuf,
 
@@ -56,4 +58,49 @@ pub struct OrchestratorConfig {
     // infra
     pub client_config: Vec<HostConfig>,
     pub server_config: Vec<HostConfig>,
+}
+
+impl OrchestratorConfig {
+    // eg. "request_response.json"
+    pub fn netbench_scenario_filename(&self) -> &str {
+        &self.netbench_scenario_filename
+    }
+
+    // eg. "../target/s2n-netbench/request_response.json"
+    pub fn netbench_scenario_filepath(&self) -> &PathBuf {
+        &self.netbench_scenario_filepath
+    }
+
+    pub fn netbench_scenario_filepath_stem(&self) -> &str {
+        self.netbench_scenario_filepath
+            .as_path()
+            .file_stem()
+            .expect("expect scenario file")
+            .to_str()
+            .unwrap()
+    }
+
+    pub fn cf_url(&self, unique_id: &str) -> String {
+        format!(
+            "{}/{}",
+            self.cdk_config.netbench_cloudfront_distribution(),
+            unique_id
+        )
+    }
+
+    pub fn s3_path(&self, unique_id: &str) -> String {
+        format!(
+            "s3://{}/{}",
+            self.cdk_config.netbench_runner_public_s3_bucket(),
+            unique_id
+        )
+    }
+
+    pub fn s3_private_path(&self, unique_id: &str) -> String {
+        format!(
+            "s3://{}/{}",
+            self.cdk_config.netbench_runner_private_s3_bucket(),
+            unique_id
+        )
+    }
 }

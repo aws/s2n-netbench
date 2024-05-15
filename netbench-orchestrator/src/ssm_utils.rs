@@ -11,8 +11,12 @@ use tracing::trace;
 
 pub mod client;
 pub mod common;
-mod netbench_driver;
+mod coordination_utils;
+pub mod netbench_driver;
 pub mod server;
+
+pub use coordination_utils::{ClientNetbenchRussula, ServerNetbenchRussula};
+pub use netbench_driver::*;
 
 // Group of SSM commands
 //
@@ -32,7 +36,6 @@ pub enum Step {
     BuildDriver(String),
     BuildRussula,
     RunRussula,
-    RunNetbench,
     UploadNetbenchRawData,
 }
 
@@ -44,7 +47,6 @@ impl Step {
             Step::BuildDriver(_driver_name) => "build_driver",
             Step::BuildRussula => "build_russula",
             Step::RunRussula => "run_russula",
-            Step::RunNetbench => "run_netbench",
             Step::UploadNetbenchRawData => "upload_netbench_raw_data",
         }
     }
@@ -56,7 +58,6 @@ impl Step {
             Step::BuildDriver(driver_name) => Some(driver_name),
             Step::BuildRussula => None,
             Step::RunRussula => None,
-            Step::RunNetbench => None,
             Step::UploadNetbenchRawData => None,
         }
     }
@@ -191,27 +192,6 @@ fn indicate_curr_step_finished(assemble_command: &mut Vec<String>, curr_step: &S
             curr_step.as_str(),
             detail
         ));
-    }
-}
-
-async fn wait_for_ssm_results(
-    endpoint: &str,
-    ssm_client: &aws_sdk_ssm::Client,
-    command_id: &str,
-) -> OrchResult<()> {
-    loop {
-        match poll_ssm_results(endpoint, ssm_client, command_id).await {
-            Ok(Poll::Ready(_)) => return Ok(()),
-            Ok(Poll::Pending) => {
-                tokio::time::sleep(STATE.poll_delay_ssm).await;
-                continue;
-            }
-            Err(err) => {
-                return Err(OrchError::Ssm {
-                    dbg: err.to_string(),
-                })
-            }
-        }
     }
 }
 

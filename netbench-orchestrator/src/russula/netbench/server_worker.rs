@@ -49,6 +49,7 @@ pub struct WorkerWorkflow {
 }
 
 impl WorkerWorkflow {
+    #[allow(dead_code)]
     pub fn new(id: String, netbench_ctx: ServerContext) -> Self {
         WorkerWorkflow {
             id,

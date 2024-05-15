@@ -1,10 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// TODO remove
-// https://github.com/aws/s2n-netbench/issues/36
-#![allow(dead_code)]
-use crate::orchestrator::{OrchResult, RunMode, STATE};
+use crate::orchestrator::{OrchError, OrchResult, STATE};
 use aws_config::BehaviorVersion;
 use aws_types::region::Region;
 use clap::Parser;
@@ -12,8 +9,22 @@ use tracing_subscriber::EnvFilter;
 
 mod ec2_utils;
 mod orchestrator;
+mod russula;
 mod s3_utils;
 mod ssm_utils;
+
+// Useful for development purposes.
+//
+// Pass this to `orchestrator::run()` to set the mode for the current run.
+pub enum RunMode {
+    // Skips the netbench run.
+    //
+    // Useful for testing infrastructure setup.
+    #[allow(dead_code)]
+    TestInfra,
+
+    Full,
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> OrchResult<()> {

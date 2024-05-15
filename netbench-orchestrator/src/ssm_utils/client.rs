@@ -6,6 +6,7 @@ use crate::{
     ec2_utils::PrivIp,
     orchestrator::OrchestratorConfig,
     ssm_utils::{netbench_driver::NetbenchDriverType, STATE},
+    OrchError, OrchResult,
 };
 use aws_sdk_ssm::operation::send_command::SendCommandOutput;
 use std::net::SocketAddr;
@@ -17,7 +18,7 @@ pub async fn run_russula_worker(
     server_ips: Vec<&PrivIp>,
     driver: &NetbenchDriverType,
     config: &OrchestratorConfig,
-) -> SendCommandOutput {
+) -> OrchResult<SendCommandOutput> {
     // assemble the list of server ips into a string
     let netbench_server_addr = server_ips
         .iter()
@@ -47,5 +48,7 @@ pub async fn run_russula_worker(
         config,
     )
     .await
-    .expect("Timed out")
+    .ok_or(OrchError::Ssm {
+        dbg: "failed to start russula worker".to_string(),
+    })
 }
