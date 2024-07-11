@@ -35,6 +35,8 @@ To send us a pull request, please:
 4. Commit to your fork using clear commit messages.
 5. Send us a pull request, answering any default questions in the pull request interface.
 6. Pay attention to any automated CI failures reported in the pull request, and stay involved in the conversation.
+7. Once CI passes, you'll need to add your change to a [merge-queue](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request-with-a-merge-queue), which will run CI again with any other queue up PRs.  The merge will happen 
+automatically or if there are failures, the PR will be evicted from the queue.
 
 GitHub provides additional document on [forking a repository](https://help.github.com/articles/fork-a-repo/) and
 [creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
