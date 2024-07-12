@@ -129,14 +129,14 @@ jobs:
           args: --all-features --no-deps --workspace
 
       - uses: aws-actions/configure-aws-credentials@v4.0.1
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-1
 
       - name: Upload to S3
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         id: s3
         run: |
           TARGET="${{ github.sha }}/doc"
@@ -145,7 +145,7 @@ jobs:
           echo "URL=$URL" >> $GITHUB_OUTPUT
 
       - uses: ouzi-dev/commit-status-updater@v2.0.1
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
           name: "doc / report"
           status: "success"
@@ -305,14 +305,14 @@ jobs:
           path: reports
 
       - uses: aws-actions/configure-aws-credentials@v4.0.1
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-1
 
       - name: Upload results
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         id: s3
         run: |
           TARGET="${{ github.sha }}/netbench"
@@ -321,7 +321,7 @@ jobs:
           echo "URL=$URL" >> $GITHUB_OUTPUT
 
       - uses: ouzi-dev/commit-status-updater@v2.0.1
-        if: github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name
+        if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
           name: "netbench / report"
           status: "success"
