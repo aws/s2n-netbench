@@ -6,8 +6,6 @@ import handler
 import json
 from datetime import datetime, timedelta, timezone
 
-def test_MAX_LIFETIME():
-    assert handler.MAX_LIFETIME
 
 def test_get_ebs_age_happy():
     """
@@ -15,6 +13,7 @@ def test_get_ebs_age_happy():
     """
     yesterday = datetime.now(tz=timezone.utc) - timedelta(days=1)
     assert handler.get_ebs_age(yesterday) == 86400
+
 
 def test_get_ebs_age_future():
     """
@@ -24,12 +23,14 @@ def test_get_ebs_age_future():
     with pytest.raises(ValueError):
         handler.get_ebs_age(today)
 
+
 def test_get_ebs_age_badformat():
     """
     Validate that an invalid date format raises an exception.
     """
     with pytest.raises(ValueError):
         handler.get_ebs_age("2024-03-05T15:59")
+
 
 def test_handler_happy(file="tests/response.json"):
     """
@@ -38,9 +39,9 @@ def test_handler_happy(file="tests/response.json"):
     with open(file, "rb") as fh:
         raw_json = json.load(fh)
     response_json = handler.process_describe_instances(raw_json)
-    assert response_json['overall_alarm'] == True
-    assert len(response_json['instances_above_max']) == 6
-    assert response_json['alarm_threshold'] ==  handler.MAX_LIFETIME
+    assert response_json['i-0e1c4f0a1d8b96602'] > 13302048
+    assert len(response_json) == 6
+
 
 def test_handler_bad(file="tests/bad_response.json"):
     """
@@ -51,3 +52,18 @@ def test_handler_bad(file="tests/bad_response.json"):
         raw_json = json.load(fh)
     with pytest.raises(ValueError):
         handler.process_describe_instances(raw_json)
+
+
+def test_create_cw_metric_happy(file="tests/response.json"):
+    """
+    response.json is an actual valid ec2 describe instance response.
+    check the cw metric object creation
+    """
+    with open(file, "rb") as fh:
+        raw_json = json.load(fh)
+    response_json = handler.process_describe_instances(raw_json)
+    result = handler.create_cw_metric_data(response_json)
+    assert len(result) == 6
+    assert result()['Namespace']== 'netbench'
+    assert result()['MetricData'][5]['Unit'] == 'Seconds'
+    assert result()['MetricData'][0]['MetricName'] == 'i-0da8d68c057b87a55'

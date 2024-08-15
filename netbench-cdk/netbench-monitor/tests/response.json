@@ -159,7 +159,7 @@
                 {
                     "AmiLaunchIndex": 0,
                     "ImageId": "ami-052c9ea013e6e3567",
-                    "InstanceId": "i-04629ccbb2da1de4b",
+                    "InstanceId": "i-04629cc2da1de4b",
                     "InstanceType": "c5.4xlarge",
                     "KeyName": "apoorvko_m1",
                     "LaunchTime": "2024-03-01T23:37:48+00:00",

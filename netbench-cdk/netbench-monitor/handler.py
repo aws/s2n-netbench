@@ -3,15 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 import boto3
 import logging
+import metrics
 from datetime import datetime, timezone
 from os import getenv
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-# Max instance lifetime in seconds defaulting to one day.
-# Over-rideable via an environment variable.
-MAX_LIFETIME: int = int(getenv("MAX_LIFETIME", 86400))
 
 def get_ebs_age(date_obj: datetime|str) -> int:
     """
@@ -27,7 +24,7 @@ def get_ebs_age(date_obj: datetime|str) -> int:
       except ValueError as e:
         print(f"The date format was unexpected: {e} ")
         raise
-    
+
     now = datetime.now(tz=timezone.utc)
     delta = now - date_obj
     if delta.total_seconds() < 1:
@@ -42,24 +39,21 @@ def lambda_handler(event, context):
     and a list of instances above and below threshold.
     """
     ec2_client = boto3.client('ec2')
+    print("Running ec2 describe-instances")
     response = ec2_client.describe_instances(
       Filters=[
         {'Name': 'instance-state-name',
          'Values': [ "running"]
         }
       ])
-    # TODO: feat: do the instance cleanup, now.
-    #if SOME_SAFETY_CONDITION:
-    #  for instance in response.instance_above_max:
-    #    terminate_instance(instance)
-    return process_describe_instances(response)
+    print("Processing ec2 response...")
+    cwobj = create_cw_metric_data(process_describe_instances(response))
+    print("Done")
 
 def process_describe_instances(response: dict) -> dict:
-    # Walk the running instance list checking the age of the disk mount
-    # against MAX_LIFETIME
-    instance_above_max: dict[str, int] = {}
-    instance_below_max: dict[str, int] = {}
-    alarm: bool = False
+    # Walk the running instance list, gather checking the age of the disk mount
+    # returns [{InstanceId,VolumeAge} ]
+    instances:set[str, int] = {}
     for group in response['Reservations']:
         instance = group['Instances'][0]
         # If this is missing, skip this instance
@@ -68,19 +62,23 @@ def process_describe_instances(response: dict) -> dict:
             raise ValueError("Missing expected field BlockDeviceMapping; "
                              + "running instances should have at least one "
                              + "block device attached.")
+
         if len(instance['BlockDeviceMappings']) > 0:
-            age = get_ebs_age(instance['BlockDeviceMappings'][0]['Ebs']['AttachTime'])
-            if age > MAX_LIFETIME:
-                alarm = True
-                instance_above_max[instance['InstanceId']] = age
-            else:
-                instance_below_max[instance['InstanceId']] = age
+            instances[instance['InstanceId']] = get_ebs_age(instance['BlockDeviceMappings'][0]['Ebs']['AttachTime'])
         else:
             continue
-    return {"alarm_threshold": MAX_LIFETIME, 
-            "overall_alarm": alarm, 
-            "instances_below_max": instance_below_max, 
-            "instances_above_max": instance_above_max }
+    return instances
+
+def create_cw_metric_data(instances: set[str, int]) -> metrics.CloudWatchMetricDataRequest:
+   """
+   Convert the list of instanceIds/ages to a list of CloudWatchMetricData objects.
+   {'i-01b672902ce93a9de': 13305681, 'i-04629ccbb2da1de4b': 13305689}
+   """
+   CWmetrics = metrics.CloudWatchMetricDataRequest("netbench")
+   for k,v in instances.items():
+      CWmetrics.append(metrics.CloudWatchMetricData(k,v,metrics.CWUnit.Seconds))
+
+   return CWmetrics
 
 def terminate_instance(instance_id: str) -> int:
     raise NotImplemented
