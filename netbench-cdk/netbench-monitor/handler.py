@@ -48,6 +48,9 @@ def lambda_handler(event, context):
       ])
     print("Processing ec2 response...")
     cwobj = create_cw_metric_data(process_describe_instances(response))
+    client = boto3.client('cloudwatch')
+    print(cwobj())
+    cwobj.put_data(client)
     print("Done")
 
 def process_describe_instances(response: dict) -> dict:
@@ -76,9 +79,10 @@ def create_cw_metric_data(instances: set[str, int]) -> metrics.CloudWatchMetricD
    """
    CWmetrics = metrics.CloudWatchMetricDataRequest("netbench")
    for k,v in instances.items():
-      CWmetrics.append(metrics.CloudWatchMetricData(k,v,metrics.CWUnit.Seconds))
-
+      dimensions = [{"Name":"InstanceId", "Value":k}]
+      CWmetrics.append(metrics.CloudWatchMetricData(metricname="InstanceAge",value=v,unit=metrics.CWUnit.Seconds, dimension=dimensions))
    return CWmetrics
 
-def terminate_instance(instance_id: str) -> int:
-    raise NotImplemented
+
+if __name__ == "__main__":
+    lambda_handler(None, None)

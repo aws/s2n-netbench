@@ -66,4 +66,5 @@ def test_create_cw_metric_happy(file="tests/response.json"):
     assert len(result) == 6
     assert result()['Namespace']== 'netbench'
     assert result()['MetricData'][5]['Unit'] == 'Seconds'
-    assert result()['MetricData'][0]['MetricName'] == 'i-0da8d68c057b87a55'
+    assert result()['MetricData'][0]['MetricName'] == 'InstanceAge'
+    assert result()['MetricData'][0]['Dimensions'][0]['Value'] == 'i-0da8d68c057b87a55'

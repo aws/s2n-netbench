@@ -4,6 +4,9 @@ from enum import Enum
 
 
 class CloudWatchNamespaceStr:
+    """
+    Namespace object to check for disallowed strings.
+    """
     def __init__(self, namespace: str):
         if 'AWS/' in namespace:
             raise ValueError('AWS/ is not allowed in namespace')
@@ -15,7 +18,9 @@ class CloudWatchNamespaceStr:
 
 
 class CWUnit(Enum):
-    # Possible units for CloudWatch Metric Data.
+    """
+    Possible units for CloudWatch Metric Data.
+    """
     Seconds = 'Seconds'
     Microseconds = 'Microseconds'
     Milliseconds = 'Milliseconds'
@@ -46,21 +51,32 @@ class CWUnit(Enum):
 
 
 class CloudWatchMetricData:
+    """
+    Single CloudWatch Metric Data Object.
+    """
     metricname: str
     value: float
     dimensions: list[dict]
     unit: CWUnit
 
-    def __init__(self, metricname: str, value: float, unit: CWUnit):
+    def __init__(self, metricname: str, value: float, unit: CWUnit, dimension:list):
         self.metricname = metricname
         self.value = value
         self.unit = unit
+        self.dimensions = dimension
 
     def __call__(self):
-        return {"MetricName": self.metricname, "Value": self.value, "Unit": self.unit.value}
+        return {"MetricName": self.metricname,
+                "Dimensions": self.dimensions,
+                "Value": self.value,
+                "Unit": self.unit.value}
 
 
 class CloudWatchMetricDataRequest:
+    """
+    List of CloudWatch Metric Data Objects.
+    Also knows how to send data to CloudWatch via a boto client.
+    """
     namespace: str
     metriclist: list[CloudWatchMetricData] = []
 
