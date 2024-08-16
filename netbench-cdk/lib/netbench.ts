@@ -171,8 +171,8 @@ export class NetbenchInfra extends cdk.Stack {
     private createMonitorLambda(): any {
         const monitorLambda = new cdk.aws_lambda.Function(this, "netbenchMonitor", {
             runtime: cdk.aws_lambda.Runtime.PYTHON_3_12,
-            handler: "index.lambda_handler",
-            code: cdk.aws_lambda.Code.fromInline(readFileSync('./netbench-monitor/handler.py', 'utf-8')),
+            handler: "handler.lambda_handler",
+            code: cdk.aws_lambda.Code.fromAsset('netbench-monitor'),
             timeout: cdk.Duration.seconds(15)
         })
         const describePolicy = cdk.aws_iam.PolicyStatement.fromJson({
@@ -180,7 +180,13 @@ export class NetbenchInfra extends cdk.Stack {
             "Action": "ec2:DescribeInstances",
             "Resource": "*"
         });
+        const putmetricPolicy = cdk.aws_iam.PolicyStatement.fromJson({
+            "Effect": "Allow",
+            "Action": "cloudwatch:PutMetricData",
+            "Resource": "*"
+        });
         monitorLambda.addToRolePolicy(describePolicy);
+        monitorLambda.addToRolePolicy(putmetricPolicy);
 
         new cdk.aws_events.Rule(this, 'ScheduledRun', {
             description: "Netbench EC2 long running instance monitor; managed by cdk",
