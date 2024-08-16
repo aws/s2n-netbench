@@ -3,6 +3,7 @@
 
 import pytest
 import handler
+import metrics
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -31,6 +32,14 @@ def test_get_ebs_age_badformat():
     with pytest.raises(ValueError):
         handler.get_ebs_age("2024-03-05T15:59")
 
+def test_no_ec2_instances(file="tests/none.json"):
+    """
+    if  There are no ec2 instances running...
+    """
+    with open(file, "rb") as fh:
+        raw_json = json.load(fh)
+    response_json = handler.process_describe_instances(raw_json)
+    assert response_json == {}
 
 def test_handler_happy(file="tests/response.json"):
     """

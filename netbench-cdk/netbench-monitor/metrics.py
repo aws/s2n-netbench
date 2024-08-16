@@ -99,7 +99,10 @@ class CloudWatchMetricDataRequest:
         return {'Namespace': self.namespace, 'MetricData': self._expand()}
 
     def put_data(self, cwClient: client):
+        print("Attempting to send data to cloudwatch...")
         try:
             cwClient.put_metric_data(Namespace=self.namespace, MetricData=self._expand())
         except ClientError:
-            raise ClientError("Couldn't put data for metric %s.%s", self.namespace, self.name)
+            print("Couldn't put data for metric %s", self.namespace)
+            raise
+        print("Done")

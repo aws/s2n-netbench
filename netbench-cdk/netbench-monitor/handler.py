@@ -47,6 +47,10 @@ def lambda_handler(event, context):
         }
       ])
     print("Processing ec2 response...")
+    describeinstances=process_describe_instances(response)
+    if describeinstances == {}:
+        print("No running instances found, exiting")
+        return
     cwobj = create_cw_metric_data(process_describe_instances(response))
     client = boto3.client('cloudwatch')
     print(cwobj())
