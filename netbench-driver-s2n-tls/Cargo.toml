@@ -12,8 +12,8 @@ license = "Apache-2.0"
 clap = { version = "4", features = ["derive"] }
 netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
 netbench-driver = { version = "0.1", path = "../netbench-driver", package = "s2n-netbench-driver" }
-s2n-tls = { version = "=0.2.7" }
-s2n-tls-tokio = { version = "=0.2.7" }
+s2n-tls = { version = "=0.3.1" }
+s2n-tls-tokio = { version = "=0.3.1" }
 tokio = { version = "1", features = ["io-util", "net", "time", "rt-multi-thread"] }
 
 [[bin]]
