@@ -102,6 +102,7 @@ jobs:
       - uses: camshaft/install@v1
         with:
           crate: cargo-udeps
+          version: 0.1.49
 
       - name: Run cargo udeps
         run: cargo udeps --workspace --all-targets
