@@ -91,12 +91,11 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - name: Install rust toolchain
         id: toolchain
-        with:
-          toolchain: ${{ env.RUST_NIGHTLY_TOOLCHAIN }}
-          profile: minimal
-          override: true
+        run: |
+          rustup toolchain install ${{ env.RUST_NIGHTLY_TOOLCHAIN }} --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLY_TOOLCHAIN }}
 
       - uses: camshaft/rust-cache@v1
 
