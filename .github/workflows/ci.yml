@@ -18,7 +18,7 @@ env:
   RUST_BACKTRACE: 1
   # Pin the nightly toolchain to prevent breakage.
   # This should be occasionally updated.
-  RUST_NIGHTLY_TOOLCHAIN: nightly-2023-12-04
+  RUST_NIGHTLY_TOOLCHAIN: stable
   CDN: https://d37mm99fcr6hy4.cloudfront.net
 
 # By default dependabot only receives read permissions. Explicitly give it write
@@ -102,6 +102,7 @@ jobs:
       - uses: camshaft/install@v1
         with:
           crate: cargo-udeps
+          version: 0.1.49
 
       - name: Run cargo udeps
         run: cargo udeps --workspace --all-targets
