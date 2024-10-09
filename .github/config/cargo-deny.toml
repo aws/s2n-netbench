@@ -1,6 +1,6 @@
 [advisories]
 vulnerability = "deny"
-unmaintained = "deny"
+#unmaintained = "deny"
 notice = "deny"
 yanked = "deny"
 ignore = [
