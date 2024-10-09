@@ -9,7 +9,7 @@ rust-version = "1.74"
 license = "Apache-2.0"
 
 [dependencies]
-handlebars = "4"
+handlebars = "6"
 netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
 once_cell = "1"
 serde = { version = "1", features = ["derive"] }
