@@ -9,9 +9,9 @@ rust-version = "1.74"
 license = "Apache-2.0"
 
 [dependencies]
-handlebars = "4"
+handlebars = "6"
 netbench = { version = "0.1", path = "../netbench", package = "s2n-netbench" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 structopt = "0.3"
-sysinfo = "0.29"
+sysinfo = "0.32.0"

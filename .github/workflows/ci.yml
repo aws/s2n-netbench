@@ -18,7 +18,7 @@ env:
   RUST_BACKTRACE: 1
   # Pin the nightly toolchain to prevent breakage.
   # This should be occasionally updated.
-  RUST_NIGHTLY_TOOLCHAIN: nightly-2023-12-04
+  RUST_NIGHTLY_TOOLCHAIN: nightly
   CDN: https://d37mm99fcr6hy4.cloudfront.net
 
 # By default dependabot only receives read permissions. Explicitly give it write
@@ -30,6 +30,7 @@ permissions:
   contents: read
   pull-requests: read
   statuses: write
+  id-token: write # This is required for requesting the JWT/OIDC
 
 jobs:
   rustfmt:
@@ -90,12 +91,11 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - name: Install rust toolchain
         id: toolchain
-        with:
-          toolchain: ${{ env.RUST_NIGHTLY_TOOLCHAIN }}
-          profile: minimal
-          override: true
+        run: |
+          rustup toolchain install ${{ env.RUST_NIGHTLY_TOOLCHAIN }} --profile minimal
+          rustup override set ${{ env.RUST_NIGHTLY_TOOLCHAIN }}
 
       - uses: camshaft/rust-cache@v1
 
@@ -131,9 +131,9 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4.0.1
         if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
+          role-to-assume: arn:aws:iam::715608808753:role/GitHubOIDCRole
+          role-session-name: githubactionsession
+          aws-region: us-west-2
 
       - name: Upload to S3
         if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
@@ -243,7 +243,7 @@ jobs:
       SCENARIO: scenarios/${{ matrix.scenario }}.json
 
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.8
         with:
           name: netbench
           path: .
@@ -288,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [run-localhost]
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.8
         with:
           path: .
 
@@ -307,9 +307,9 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4.0.1
         if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-1
+          role-to-assume: arn:aws:iam::715608808753:role/GitHubOIDCRole
+          role-session-name: githubactionsession
+          aws-region: us-west-2
 
       - name: Upload results
         if: ( github.event_name == 'merge_group' || github.event_name == 'push' ) || github.repository == github.event.pull_request.head.repo.full_name
